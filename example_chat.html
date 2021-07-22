@@ -1,0 +1,113 @@
+<html>
+<head>
+<script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
+<title>{{title}}</title>
+<style>
+	#brewery {
+		background:#AAAAAA;
+		border:2px;
+		position:absolute;
+		height:100%;
+		width:100%;
+		font-size:5vw
+	}
+	button {
+		font-size:7vw
+	}
+	#hlt {
+		background:#BBBBFF;
+		border:2px;
+		position:absolute;
+		width:100%;
+		top:0;
+		height:35%
+	}
+	#mt {
+		background:#FFBBBB;
+		border:2px;
+		position:absolute;
+		width:100%;
+		top:35%;
+		height:25%
+	}
+	#bk {
+		background:#BBFFBB;
+		border:2px;
+		position:absolute;
+		width:100%;
+		top:60%;
+		height:15%
+	}
+	#pump_assembly {
+		background:#BFBFBF;
+		position:absolute;
+		border:2px;
+		width:100%;
+		top:75%;
+		height:25%
+	}
+</style>
+</head>
+<body>
+<div id="brewery">
+ <div id="hlt">
+	<div id="input_flow"></div>
+	<button id="heater">hlt heater</button>
+	<button id="reflow_valve">hlt reflow_valve</button>
+	<div id="output_flow"></div>
+	<button id="pump">hlt pump</button>
+</div>
+<div id="mt">
+	<div id="liquid_max"></div>
+	<div id="reflow_temp"></div>
+</div>
+<div id="bk">
+	<button id="heater">bk heater</button>
+</div>
+<div id="pump_assembly">
+	<div id="temp"></div>
+	<button id="input_valve">input_valve</button>
+	<button id="pump">pump</button>
+	<button id="output_valve">output_valve</button>
+</div>
+</div>
+<script>
+
+$(document).ready(function(){
+	$('#brewery > #hlt > #heater').click(function(){$.get("/modify/brewery hlt heater");});
+	$('#brewery > #hlt > #reflow_valve').click(function(){$.get("/modify/brewery hlt reflow_valve");});
+	$('#brewery > #hlt > #pump').click(function(){$.get("/modify/brewery hlt pump");});
+	$('#brewery > #output_valve').click(function(){$.get("/modify/brewery output_valve");});
+	$('#brewery > #bk > #heater').click(function(){$.get("/modify/brewery bk heater");});
+	$('#brewery > #pump').click(function(){$.get("/modify/brewery pump");});
+	$('#brewery > #input_valve').click(function(){$.get("/modify/brewery input_valve");});
+
+	setInterval(function(){
+		var processData;
+	    processData = function(data, par) {
+			$.each( data, function(key,val) {
+				var selector = par + ' > #' + key;
+				console.log(selector);
+				if( $.isArray(val) || $.isPlainObject(val))
+					processData(val, selector);
+				else if( $.isNumeric(val) )
+				{
+					if( $(selector).is('button') )
+					{
+						if( val == 0 )
+							$(selector).css('color','red');
+						else
+							$(selector).css('color','green');
+					} else
+						$(selector).html(selector+':'+val);
+				}
+				else
+					console.log("cant handle " + selector + " : " + val);
+			});
+		};
+		$.getJSON("/status",function(data){processData(data,"#brewery");});
+	}, 1000);
+});
+</script>
+</body>
+</html>

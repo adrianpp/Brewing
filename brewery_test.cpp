@@ -13,7 +13,13 @@ public:
 struct ComponentBase : public Named {
 	using Named::Named;
 	virtual crow::json::wvalue getStatus()=0;
-	virtual void modify(std::vector<std::string>)=0;
+	virtual void registerEndpoints(crow::SimpleApp& app, std::string endpointPrefix) {
+
+		app.route_dynamic(endpointPrefix+"/"+this->getName()+"/status")
+		([&](){
+			return this->getStatus();
+		});
+	}
 };
 
 template<class First, class...Rest>
@@ -34,20 +40,9 @@ public:
 		else
 			return ComponentTuple<Rest...>::template get<N-1>();
 	}
-	virtual void modify(std::vector<std::string> s) override {
-		if( this->getName() != s.at(0) )
-		{
-			CROW_LOG_DEBUG << this->getName() << " is handling; did not match";
-			return;
-		}
-		if( first.getName() == s.at(1) )
-		{
-			s.erase(s.begin()); //pop_front
-			CROW_LOG_DEBUG << this->getName() << " is handling; pass along to child";
-			return first.modify(s);
-		}
-		CROW_LOG_DEBUG << this->getName() << " is handling; checking next";
-		ComponentTuple<Rest...>::modify(s);
+	virtual void registerEndpoints(crow::SimpleApp& app, std::string endpointPrefix) override {
+		first.registerEndpoints(app, endpointPrefix+"/"+this->getName());
+		ComponentTuple<Rest...>::registerEndpoints(app, endpointPrefix);
 	}
 };
 
@@ -67,15 +62,9 @@ public:
 		static_assert( N == 0 and "N too large for component!" );
 		return first;
 	}
-	virtual void modify(std::vector<std::string> s) override {
-		if( this->getName() != s.at(0) )
-		{
-			CROW_LOG_DEBUG << this->getName() << " is handling; did not match";
-			return;
-		}
-		CROW_LOG_DEBUG << this->getName() << " is handling; pass along to child";
-		s.erase(s.begin()); //pop_front
-		first.modify(s); // pass it along
+	virtual void registerEndpoints(crow::SimpleApp& app, std::string endpointPrefix) override {
+		first.registerEndpoints(app, endpointPrefix+"/"+this->getName());
+		ComponentBase::registerEndpoints(app, endpointPrefix);
 	}
 };
 
@@ -87,9 +76,6 @@ struct ReadableValue : public ComponentBase {
 		crow::json::wvalue ret;
 		ret = std::to_string(get());
 		return ret;
-	}
-	virtual void modify(std::vector<std::string> s) override {
-		CROW_LOG_DEBUG << this->getName() << " is handling; but is readable, not writable";
 	}
 };
 
@@ -132,15 +118,13 @@ public:
 	using ReadableValue<T>::ReadableValue;
 	void set(T v) {value = v;}
 	virtual T get() override {return value;}
-	virtual void modify(std::vector<std::string> s) override {
-		if( this->getName() != s.at(0) )
-		{
-			CROW_LOG_DEBUG << this->getName() << " is handling; did not match";
-			return;
-		}
-		CROW_LOG_DEBUG << this->getName() << " is handling; toggling value";
-		s.erase(s.begin());
-		value = !value;
+	virtual void registerEndpoints(crow::SimpleApp& app, std::string endpointPrefix) override {
+		ReadableValue<T>::registerEndpoints(app, endpointPrefix);
+		app.route_dynamic(endpointPrefix+"/"+this->getName()+"/toggle")
+		([&](){
+			value = !value;
+			return "";
+		});
 	}
 };
 
@@ -176,19 +160,6 @@ struct Brewery : public ComponentTuple<HotLiquorTank, MashTun, BrewKettle, PumpA
 	Brewery(std::string name) : ComponentTuple(name, "hlt", "mt", "bk", "pump_assembly") {}
 };
 
-std::vector<std::string> split(const std::string& str, const std::string& delim) {
-	std::vector<std::string> strings;
-	size_t start = 0;
-	size_t end = 0;
-	while (start != std::string::npos and end != std::string::npos and start < str.length() and end < str.length()) {
-		end = str.find(delim, start);
-		if( end != start )
-			strings.push_back(str.substr(start, end - start));
-		start = end + delim.length();
-	}
-	return strings;
-}
-
 int main(int argc, char* argv[])
 {
 	Brewery brewery("brewery");
@@ -203,24 +174,11 @@ int main(int argc, char* argv[])
     ([]{
         crow::mustache::context ctx;
 		ctx["title"] = "brewery controller test";
-        return crow::mustache::load("example_chat.html").render(ctx);
+        return crow::mustache::load("static_main.html").render(ctx);
     });
 
-	CROW_ROUTE(app, "/status")
-	([&]{
-		return brewery.getStatus();
-	});
-
-	CROW_ROUTE(app, "/modify/<string>")
-	([&](std::string s){
-		CROW_LOG_DEBUG << s;
-		auto strs = split(s, "%20");
-		for(auto s : strs)
-			CROW_LOG_DEBUG << s;
-		brewery.modify(strs);
-		return "";
-	});
-
+	brewery.registerEndpoints(app,"");
+	
 	app.port(40080)
         //.multithreaded()
         .run();

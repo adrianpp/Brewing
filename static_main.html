@@ -74,13 +74,13 @@
 <script>
 
 $(document).ready(function(){
-	$('#brewery > #hlt > #heater').click(function(){$.get("/modify/brewery hlt heater");});
-	$('#brewery > #hlt > #reflow_valve').click(function(){$.get("/modify/brewery hlt reflow_valve");});
-	$('#brewery > #hlt > #pump').click(function(){$.get("/modify/brewery hlt pump");});
-	$('#brewery > #output_valve').click(function(){$.get("/modify/brewery output_valve");});
-	$('#brewery > #bk > #heater').click(function(){$.get("/modify/brewery bk heater");});
-	$('#brewery > #pump').click(function(){$.get("/modify/brewery pump");});
-	$('#brewery > #input_valve').click(function(){$.get("/modify/brewery input_valve");});
+	$('#brewery > #hlt > #heater').click(function(){$.get("/brewery/hlt/heater/toggle");});
+	$('#brewery > #hlt > #reflow_valve').click(function(){$.get("/brewery/hlt/reflow_valve/toggle");});
+	$('#brewery > #hlt > #pump').click(function(){$.get("/brewery/hlt/pump/toggle");});
+	$('#brewery > #bk > #heater').click(function(){$.get("/brewery/bk/heater/toggle");});
+	$('#brewery > #pump_assembly > #input_valve').click(function(){$.get("/brewery/pump_assembly/input_valve/toggle");});
+	$('#brewery > #pump_assembly > #pump').click(function(){$.get("/brewery/pump_assembly/pump/toggle");});
+	$('#brewery > #pump_assembly > #output_valve').click(function(){$.get("/brewery/pump_assembly/output_valve/toggle");});
 
 	setInterval(function(){
 		var processData;
@@ -105,7 +105,7 @@ $(document).ready(function(){
 					console.log("cant handle " + selector + " : " + val);
 			});
 		};
-		$.getJSON("/status",function(data){processData(data,"#brewery");});
+		$.getJSON("/brewery/status",function(data){processData(data,"#brewery");});
 	}, 1000);
 });
 </script>

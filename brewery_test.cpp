@@ -14,17 +14,24 @@ struct ComponentBase : public Named {
 	using Named::Named;
 	virtual crow::json::wvalue getStatus()=0;
 	virtual void registerEndpoints(crow::SimpleApp& app, std::string endpointPrefix) {
-
 		app.route_dynamic(endpointPrefix+"/"+this->getName()+"/status")
 		([&](){
 			return this->getStatus();
 		});
 	}
+	virtual std::string generateLayout()=0;
+	virtual std::string generateUpdateJS(std::vector<std::string> parent){return "";}
 };
 
 template<class First, class...Rest>
 class ComponentTuple : public ComponentTuple<Rest...> {
 	First first;
+protected:
+	virtual std::string generateChildLayout() override {
+		std::string ret = first.generateLayout();
+		ret += ComponentTuple<Rest...>::generateChildLayout();
+		return ret;
+	}
 public:
 	template<class CFirst, class...CRest>
 	ComponentTuple(std::string name, CFirst cf, CRest... cr) : first(cf), ComponentTuple<Rest...>(name, cr...) {}
@@ -33,22 +40,25 @@ public:
 		ret[first.getName()] = first.getStatus();
 		return ret;
 	}
-	template<std::size_t N>
-	auto get() {
-		if constexpr (N == 0)
-			return first;
-		else
-			return ComponentTuple<Rest...>::template get<N-1>();
-	}
 	virtual void registerEndpoints(crow::SimpleApp& app, std::string endpointPrefix) override {
 		first.registerEndpoints(app, endpointPrefix+"/"+this->getName());
 		ComponentTuple<Rest...>::registerEndpoints(app, endpointPrefix);
+	}
+	virtual std::string generateUpdateJS(std::vector<std::string> parent) override {
+		std::string ret = ComponentTuple<Rest...>::generateUpdateJS(parent);
+		parent.push_back(this->getName());
+		ret += first.generateUpdateJS(parent);
+		return ret;
 	}
 };
 
 template<class First>
 class ComponentTuple<First> : public ComponentBase {
 	First first;
+protected:
+	virtual std::string generateChildLayout() {
+		return first.generateLayout();
+	}
 public:
 	template<class CFirst>
 	ComponentTuple(std::string name, CFirst cf) : first(cf), ComponentBase(name) {}
@@ -57,14 +67,19 @@ public:
 		ret[first.getName()] = first.getStatus();
 		return ret;
 	}
-	template<std::size_t N>
-	auto get() {
-		static_assert( N == 0 and "N too large for component!" );
-		return first;
-	}
 	virtual void registerEndpoints(crow::SimpleApp& app, std::string endpointPrefix) override {
 		first.registerEndpoints(app, endpointPrefix+"/"+this->getName());
 		ComponentBase::registerEndpoints(app, endpointPrefix);
+	}
+	virtual std::string generateLayout() override {
+		std::string ret = "<div id=\"" + this->getName() + "\">\n";
+		ret += this->generateChildLayout();
+		ret += "</div>\n";
+		return ret;
+	}
+	virtual std::string generateUpdateJS(std::vector<std::string> parent) override {
+		parent.push_back(this->getName());
+		return first.generateUpdateJS(parent);
 	}
 };
 
@@ -76,6 +91,31 @@ struct ReadableValue : public ComponentBase {
 		crow::json::wvalue ret;
 		ret = std::to_string(get());
 		return ret;
+	}
+	virtual std::string generateLayout() override {
+		return "<div id=\"" + this->getName() + "\"></div>\n";
+	}
+	virtual std::string generateSelector(std::vector<std::string> parent)
+	{
+		std::string selector;
+		for(auto p : parent)
+			selector += "#" + p + " > ";
+		selector += "#" + this->getName();
+		return selector;
+	}
+	virtual std::string generateEndpoint(std::vector<std::string> parent)
+	{
+		std::string endpoint;
+		for(auto p : parent)
+			endpoint += "/" + p;
+		endpoint += "/" + this->getName();
+		return endpoint;
+	}
+	virtual std::string generateUpdateJS(std::vector<std::string> parent)
+	{
+		std::string selector = generateSelector(parent);
+		std::string endpoint = generateEndpoint(parent);
+		return "setInterval(function(){ updateText(\"" + endpoint + "\", \"" + selector + "\"); }, 1000);\n";
 	}
 };
 
@@ -115,40 +155,95 @@ template<class T>
 class WriteableValue : public ReadableValue<T> {
 	T value{0};
 public:
-	using ReadableValue<T>::ReadableValue;
+	WriteableValue(std::string name, T v=0) : ReadableValue<T>(name), value(v) {}
 	void set(T v) {value = v;}
 	virtual T get() override {return value;}
+};
+
+class Button : public WriteableValue<int> {
+public:
+	using WriteableValue<int>::WriteableValue;
 	virtual void registerEndpoints(crow::SimpleApp& app, std::string endpointPrefix) override {
-		ReadableValue<T>::registerEndpoints(app, endpointPrefix);
+		ReadableValue<int>::registerEndpoints(app, endpointPrefix);
 		app.route_dynamic(endpointPrefix+"/"+this->getName()+"/toggle")
 		([&](){
-			value = !value;
+			this->set(!this->get());
 			return "";
 		});
 	}
+	virtual std::string generateLayout() override {
+		return "<button id=\"" + this->getName() + "\">" + this->getName() + "</button>\n";
+	}
+	virtual std::string generateUpdateJS(std::vector<std::string> parent)
+	{
+		std::string selector = generateSelector(parent);
+		std::string endpoint = generateEndpoint(parent);
+		std::string ret = "$(\'" + selector + "\').click(function(){$.get(\"" + endpoint + "/toggle\");});\n";
+		ret += "setInterval(function(){ updateButton(\"" + endpoint + "\", \"" + selector + "\"); }, 1000);\n";
+		return ret;
+	}
 };
 
-class Valve : public WriteableValue<double> {
-	using WriteableValue<double>::WriteableValue;
+#include <sstream>
+
+template<class T>
+class TargetValue : public WriteableValue<T> {
+	T MinValue;
+	T MaxValue;
+public:
+	TargetValue(std::string name, T min, T max) : WriteableValue<T>(name, min), MinValue(min), MaxValue(max) {}
+	virtual void registerEndpoints(crow::SimpleApp& app, std::string endpointPrefix) override {
+		WriteableValue<T>::registerEndpoints(app, endpointPrefix);
+		app.route_dynamic(endpointPrefix+"/"+this->getName()+"/set_target")
+		([&](const crow::request& req){
+			std::stringstream ss;
+			ss << req.url_params.get("value");
+			T v;
+			ss >> v;
+			this->set(v);
+			return "";
+		});
+	}
+	virtual std::string generateLayout() override {
+		std::string ret;
+	   	ret += "<div id=\"" + this->getName() + "_label\"></div>\n";
+	   	ret += "<input id=\"" + this->getName() + "\" type='range' min='" + std::to_string(MinValue) + "' max='" + std::to_string(MaxValue) + "' value='" + std::to_string(this->get()) + "'>\n";
+		return ret;
+	}
+	virtual std::string generateUpdateJS(std::vector<std::string> parent) override
+	{
+		std::string selector = WriteableValue<T>::generateSelector(parent);
+		std::string endpoint = WriteableValue<T>::generateEndpoint(parent);
+		std::string ret;
+	    ret	+= "$(\'" + selector + "\').mouseup(function(){$.get(\"" + endpoint + "/set_target?value=\"+$(\'" + selector + "\').prop('value'));});\n";
+		ret += "$(\'" + selector + "\').bind('touchend',function(){$.get(\"" + endpoint + "/set_target?value=\"+$(\'" + selector + "\').prop('value'));});\n";
+		ret += "setInterval(function(){ updateTargetValue(\"" + endpoint + "\", \"" + selector + "\"); }, 1000);\n";
+		return ret;
+	}
 };
 
-class Pump : public WriteableValue<double> {
-	using WriteableValue<double>::WriteableValue;
+class Valve : public Button {
+	using Button::Button;
 };
 
-class Heater : public WriteableValue<double> {
-	using WriteableValue<double>::WriteableValue;
+class Pump : public Button {
+	using Button::Button;
 };
 
-struct HotLiquorTank : public ComponentTuple<FlowSensor, Heater, Valve, Pump, FlowSensor> {
-	HotLiquorTank(std::string name) : ComponentTuple(name, "input_flow", "heater", "reflow_valve", "pump", "output_flow") {}
+class Heater : public TargetValue<double> {
+public:
+	using TargetValue<double>::TargetValue;
 };
 
-struct MashTun : public ComponentTuple<LevelSensor, TempSensor> {
-	MashTun(std::string name) : ComponentTuple(name, "liquid_max", "reflow_temp") {}
+struct HotLiquorTank : public ComponentTuple<FlowSensor, Heater, Valve, Pump, TempSensor, FlowSensor> {
+	HotLiquorTank(std::string name) : ComponentTuple(name, "input_flow", Heater{"heater",100,200}, "reflow_valve", "pump", "reflow_temp", "output_flow") {}
 };
 
-struct BrewKettle : public ComponentTuple<Heater> {
+struct MashTun : public ComponentTuple<LevelSensor, FlowSensor> {
+	MashTun(std::string name) : ComponentTuple(name, "liquid_max", "output_flow") {}
+};
+
+struct BrewKettle : public ComponentTuple<Button> {
 	BrewKettle(std::string name) : ComponentTuple(name, "heater") {}
 };
 
@@ -171,15 +266,15 @@ int main(int argc, char* argv[])
     crow::mustache::set_base(".");
 
     CROW_ROUTE(app, "/")
-    ([]{
+    ([&]{
         crow::mustache::context ctx;
 		ctx["title"] = "brewery controller test";
+		ctx["brewery_layout"] = brewery.generateLayout();
+		ctx["update_js"] = brewery.generateUpdateJS({});
         return crow::mustache::load("static_main.html").render(ctx);
     });
 
 	brewery.registerEndpoints(app,"");
 	
-	app.port(40080)
-        //.multithreaded()
-        .run();
+	app.port(40080).run();
 }

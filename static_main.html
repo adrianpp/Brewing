@@ -49,65 +49,34 @@
 </style>
 </head>
 <body>
-<div id="brewery">
- <div id="hlt">
-	<div id="input_flow"></div>
-	<button id="heater">hlt heater</button>
-	<button id="reflow_valve">hlt reflow_valve</button>
-	<div id="output_flow"></div>
-	<button id="pump">hlt pump</button>
-</div>
-<div id="mt">
-	<div id="liquid_max"></div>
-	<div id="reflow_temp"></div>
-</div>
-<div id="bk">
-	<button id="heater">bk heater</button>
-</div>
-<div id="pump_assembly">
-	<div id="temp"></div>
-	<button id="input_valve">input_valve</button>
-	<button id="pump">pump</button>
-	<button id="output_valve">output_valve</button>
-</div>
-</div>
+{{{brewery_layout}}}
 <script>
 
 $(document).ready(function(){
-	$('#brewery > #hlt > #heater').click(function(){$.get("/brewery/hlt/heater/toggle");});
-	$('#brewery > #hlt > #reflow_valve').click(function(){$.get("/brewery/hlt/reflow_valve/toggle");});
-	$('#brewery > #hlt > #pump').click(function(){$.get("/brewery/hlt/pump/toggle");});
-	$('#brewery > #bk > #heater').click(function(){$.get("/brewery/bk/heater/toggle");});
-	$('#brewery > #pump_assembly > #input_valve').click(function(){$.get("/brewery/pump_assembly/input_valve/toggle");});
-	$('#brewery > #pump_assembly > #pump').click(function(){$.get("/brewery/pump_assembly/pump/toggle");});
-	$('#brewery > #pump_assembly > #output_valve').click(function(){$.get("/brewery/pump_assembly/output_valve/toggle");});
 
-	setInterval(function(){
-		var processData;
-	    processData = function(data, par) {
-			$.each( data, function(key,val) {
-				var selector = par + ' > #' + key;
-				console.log(selector);
-				if( $.isArray(val) || $.isPlainObject(val))
-					processData(val, selector);
-				else if( $.isNumeric(val) )
-				{
-					if( $(selector).is('button') )
-					{
-						if( val == 0 )
-							$(selector).css('color','red');
-						else
-							$(selector).css('color','green');
-					} else
-						$(selector).html(selector+':'+val);
-				}
-				else
-					console.log("cant handle " + selector + " : " + val);
-			});
-		};
-		$.getJSON("/brewery/status",function(data){processData(data,"#brewery");});
-	}, 1000);
-});
+	function updateText(endpoint, selector) {
+		$.getJSON(endpoint+"/status", function(data) {
+			$(selector).html(endpoint + " : " + data);
+		});
+	}
+	function updateButton(endpoint, selector) {
+		$.getJSON(endpoint+"/status", function(data) {
+			if( !$.isNumeric(data) || data == 0 )
+				$(selector).css('color','red');
+			else
+				$(selector).css('color','green');
+		});
+	}
+	function updateTargetValue(endpoint, selector) {
+		$.getJSON(endpoint+"/status", function(data) {
+			$(selector).prop("value", data);
+			$(selector+"_label").html(endpoint + " : " + data);
+		});
+	}
+
+{{{update_js}}}
+
+}); // close document.ready()
 </script>
 </body>
 </html>

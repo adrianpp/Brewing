@@ -72,9 +72,10 @@ public:
 		ComponentBase::registerEndpoints(app, endpointPrefix);
 	}
 	virtual std::string generateLayout() override {
-		std::string ret = "<div id=\"" + this->getName() + "\">\n";
+		std::string ret = "<fieldset id=\"" + this->getName() + "\">\n";
+		ret += "<legend>" + this->getName() + "</legend>\n";
 		ret += this->generateChildLayout();
-		ret += "</div>\n";
+		ret += "</fieldset>\n";
 		return ret;
 	}
 	virtual std::string generateUpdateJS(std::vector<std::string> parent) override {
@@ -115,7 +116,7 @@ struct ReadableValue : public ComponentBase {
 	{
 		std::string selector = generateSelector(parent);
 		std::string endpoint = generateEndpoint(parent);
-		return "setInterval(function(){ updateText(\"" + endpoint + "\", \"" + selector + "\"); }, 1000);\n";
+		return "registerText('" + endpoint + "', '" + selector + "');\n";
 	}
 };
 
@@ -178,9 +179,7 @@ public:
 	{
 		std::string selector = generateSelector(parent);
 		std::string endpoint = generateEndpoint(parent);
-		std::string ret = "$(\'" + selector + "\').click(function(){$.get(\"" + endpoint + "/toggle\");});\n";
-		ret += "setInterval(function(){ updateButton(\"" + endpoint + "\", \"" + selector + "\"); }, 1000);\n";
-		return ret;
+		return "registerButton('" + endpoint + "', '" + selector + "');\n";
 	}
 };
 
@@ -207,18 +206,14 @@ public:
 	virtual std::string generateLayout() override {
 		std::string ret;
 	   	ret += "<div id=\"" + this->getName() + "_label\"></div>\n";
-	   	ret += "<input id=\"" + this->getName() + "\" type='range' min='" + std::to_string(MinValue) + "' max='" + std::to_string(MaxValue) + "' value='" + std::to_string(this->get()) + "'>\n";
+	   	ret += "<input id=\"" + this->getName() + "\" type='range'/>\n";
 		return ret;
 	}
 	virtual std::string generateUpdateJS(std::vector<std::string> parent) override
 	{
 		std::string selector = WriteableValue<T>::generateSelector(parent);
 		std::string endpoint = WriteableValue<T>::generateEndpoint(parent);
-		std::string ret;
-	    ret	+= "$(\'" + selector + "\').mouseup(function(){$.get(\"" + endpoint + "/set_target?value=\"+$(\'" + selector + "\').prop('value'));});\n";
-		ret += "$(\'" + selector + "\').bind('touchend',function(){$.get(\"" + endpoint + "/set_target?value=\"+$(\'" + selector + "\').prop('value'));});\n";
-		ret += "setInterval(function(){ updateTargetValue(\"" + endpoint + "\", \"" + selector + "\"); }, 1000);\n";
-		return ret;
+		return "registerTargetValue(\'" + endpoint + "\', \'" + selector + "\'," + std::to_string(MinValue) + ", " + std::to_string(MaxValue) + ");\n";
 	}
 };
 

@@ -1,50 +1,52 @@
 <html>
 <head>
-<script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
+<script src="//code.jquery.com/jquery-1.12.4.js"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+<link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
 <title>{{title}}</title>
 <style>
-	#brewery {
-		background:#AAAAAA;
+	body {
+		background-color: white;
 		border:2px;
-		position:absolute;
-		height:100%;
-		width:100%;
-		font-size:5vw
+		font-size:5vw;
+		color:black;
 	}
 	button {
-		font-size:7vw
+		font-size:7vw;
 	}
-	#hlt {
-		background:#BBBBFF;
-		border:2px;
-		position:absolute;
-		width:100%;
-		top:0;
-		height:35%
+	input[type='range']  {
+		-webkit-appearance: none ;
+		width:200px;
+		height:80px;
 	}
-	#mt {
-		background:#FFBBBB;
-		border:2px;
-		position:absolute;
-		width:100%;
-		top:35%;
-		height:25%
+	input[type='range']::-webkit-slider-runnable-track {
+		-webkit-appearance: none ;
+		appearance: none ;
+		border-radius: 5px;
+		box-shadow: inset 1px 1px 1px rgba(000,000,000,0.10);
+		background-color: #CCC;
+		height: 16px;
+		vertical-align:middle;
+		border: none;
+		cursor: pointer;
 	}
-	#bk {
-		background:#BBFFBB;
-		border:2px;
-		position:absolute;
-		width:100%;
-		top:60%;
-		height:15%
+	input[type='range']::-webkit-slider-thumb {
+		-webkit-appearance: none;
+		border-radius: 100%;
+		background-color: #037cd5;
+		box-shadow: inset 0 0 0 4px #CCC, inset 0 0 4px #CCC, inset 0 0 0 4px #CCC;
+		height: 32px;
+		width: 32px;
+		vertical-align:middle;
+		border: none;
+		cursor: pointer;
+		margin-top: -6px;
 	}
-	#pump_assembly {
-		background:#BFBFBF;
-		position:absolute;
-		border:2px;
-		width:100%;
-		top:75%;
-		height:25%
+	input[type='range']::-webkit-slider-thumb:hover { 
+		background: #fdd921;
+	}
+	input[type='range']:active::-webkit-slider-thumb { 
+		background: #fdd921; 
 	}
 </style>
 </head>
@@ -53,10 +55,10 @@
 <script>
 
 $(document).ready(function(){
-
 	function updateText(endpoint, selector) {
 		$.getJSON(endpoint+"/status", function(data) {
-			$(selector).html(endpoint + " : " + data);
+			const path = endpoint.split("/");
+			$(selector).html(path[path.length-1] + " : " + data);
 		});
 	}
 	function updateButton(endpoint, selector) {
@@ -70,8 +72,27 @@ $(document).ready(function(){
 	function updateTargetValue(endpoint, selector) {
 		$.getJSON(endpoint+"/status", function(data) {
 			$(selector).prop("value", data);
-			$(selector+"_label").html(endpoint + " : " + data);
+			const path = endpoint.split("/");
+			$(selector+"_label").html(path[path.length-1] + "_target : " + data);
 		});
+	}
+	function registerText(endpoint, selector) {
+		setInterval(function(){ updateText(endpoint, selector); }, 1000);
+	}
+	function registerButton(endpoint, selector) {
+		var updateFunc = function(){updateButton(endpoint, selector);};
+		$(selector).click(function(){$.get(endpoint + "/toggle"); setTimeout(updateFunc,100);});
+		setInterval(updateFunc, 1000);
+	}
+	function registerTargetValue(endpoint, selector, MinValue, MaxValue) {
+		$(selector).prop('min', MinValue);
+		$(selector).prop('max', MaxValue);
+		var updateFunc = function(){updateTargetValue(endpoint,selector);};
+		var setFunc = function(){$.get(endpoint+"/set_target?value="+$(selector).prop('value')); setTimeout(updateFunc,100);};
+		$(selector).mouseup(setFunc);
+		$(selector).bind('touchend',setFunc);
+		$(selector).css('width', '100%');
+		setInterval(updateFunc, 1000);
 	}
 
 {{{update_js}}}

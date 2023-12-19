@@ -74,6 +74,7 @@ $(document).ready(function(){
 			$(selector).prop("value", data);
 			const path = endpoint.split("/");
 			$(selector+"_label").html(path[path.length-1] + "_target : " + data);
+			$(selector+"_label").css('color','black');
 		});
 	}
 	function registerText(endpoint, selector) {
@@ -89,9 +90,11 @@ $(document).ready(function(){
 		$(selector).prop('max', MaxValue);
 		var updateFunc = function(){updateTargetValue(endpoint,selector);};
 		var setFunc = function(){$.get(endpoint+"/set_target?value="+$(selector).prop('value')); setTimeout(updateFunc,100);};
-		$(selector).mouseup(setFunc);
-		$(selector).bind('touchend',setFunc);
+		$(selector).change(setFunc);
 		$(selector).css('width', '100%');
+		const path = endpoint.split("/");
+		var changedFunc = function(){$(selector+"_label").css('color','red').html(path[path.length-1]+"_target : " + $(selector).prop('value'));};
+		$(selector).on('input',changedFunc);
 		setInterval(updateFunc, 1000);
 	}
 

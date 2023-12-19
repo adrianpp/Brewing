@@ -3,12 +3,13 @@
 #include <string>
 #include <vector>
 #include <thread>
+#include <atomic>
 #include <wiringPi.h>
 #include <ds18b20.h>
 
 /*
 	build with:
-		g++ brewery_test.cpp -I ../crow/include/ --std=c++17 -pthread -lwiringPi -lboost_system -g
+		g++ brewery_test.cpp -I ../crow/include/ --std=c++17 -pthread -lwiringPi -lboost_system -latomic -Wno-psabi -g
 	need to have loaded the 1-wire bus via:
 		sudo dtoverlay w1-gpio gpiopin=26
 */
@@ -26,10 +27,10 @@ constexpr auto PUMP_ASSEMBLY_TEMP_ID = "derpderpderp";
 constexpr auto HLT_PUMP_PIN = 2;
 constexpr auto PUMP_ASSEMBLY_PUMP_PIN = 5;
 /* Digital in */
-// HLT_INPUT_FLOW_PIN
-// HLT_OUTPUT_FLOW_PIN
-// MT_LIQUID_MAX_PIN
-// MT_OUTPUT_FLOW_PIN
+constexpr auto HLT_INPUT_FLOW_PIN = 11;
+constexpr auto HLT_OUTPUT_FLOW_PIN = 12;
+constexpr auto MT_OUTPUT_FLOW_PIN = 13;
+//MT_LIQUID_MAX_PIN
 
 /* Digital out */
 constexpr auto HLT_HEATER_PIN = 7;
@@ -179,7 +180,7 @@ public:
 class TempSensor : public ReadableValue<double> {
 	int pin_num;
 	std::thread update_thread;
-	float temp = 0.0;
+	std::atomic<double> temp = 0.0;
 	void update() {
 		while(true) {
 			temp = (analogRead(pin_num) / 10.0) * 1.8 + 32; // return in F
@@ -207,22 +208,59 @@ public:
 		pthread_cancel(id);
 	}
 	virtual double get() {
-		return temp;
+		return getTempF();
 	}
 	double getTempF() {
-		return this->get();
+		return temp;
 	}
 };
 
+template<int PinNum, int EdgeType>
+class CountEdges {
+	static std::atomic<int> edges;
+	static void update() {
+		++edges;
+	}
+public:
+	CountEdges() {
+		wiringPiISR(PinNum, EdgeType, &update);
+	}
+	int getEdges() {
+		return edges;
+	}
+};
+
+template<int PinNum, int EdgeType>
+std::atomic<int> CountEdges<PinNum,EdgeType>::edges = 0;
+
+static constexpr auto LitersPerGallon = 3.785412;
+
+template<int PinNum, int EdgesPerLiter=600>
 class FlowSensor : public ReadableValue<double> {
+	CountEdges<PinNum, INT_EDGE_RISING> sensor;
+	int initialEdgeCount;
+	int edgeCount() {
+		return sensor.getEdges() - initialEdgeCount;
+	}
 public:
 	using ReadableValue<double>::ReadableValue;
-	virtual double get() {
-		return 5.0;
+	void resetFlowCount() {
+		initialEdgeCount = sensor.getEdges();
 	}
-	double getFlowInLiter() {
-		double f = this->get();
-		return f;
+	FlowSensor() { 
+		resetFlowCount();
+		CROW_LOG_INFO << "FlowSensor<" << PinNum << ", " << EdgesPerLiter << ">:";
+		CROW_LOG_INFO << "initialEdgeCount = " << initialEdgeCount;
+		CROW_LOG_INFO << "edgeCount() = " << edgeCount();
+	}
+	double getFlowInLiters() {
+		return edgeCount() / static_cast<double>(EdgesPerLiter);
+	}
+	double getFlowInGallons() {
+		return getFlowInLiters() / LitersPerGallon;
+	}
+	virtual double get() {
+		return getFlowInGallons();
 	}
 };
 
@@ -321,7 +359,7 @@ public:
 	void off() {pin.off();}
 };
 
-struct HotLiquorTank : public ComponentTuple<FlowSensor, Heater, Valve, Pump, TempSensor, FlowSensor> {
+struct HotLiquorTank : public ComponentTuple<FlowSensor<HLT_INPUT_FLOW_PIN>, Heater, Valve, Pump, TempSensor, FlowSensor<HLT_OUTPUT_FLOW_PIN>> {
 	HotLiquorTank(std::string name) : ComponentTuple(name, "input_flow", Heater{"heater",50,200,HLT_HEATER_PIN}, Valve{"reflow_valve",HLT_REFLOW_VALVE_PIN}, Pump{"pump",HLT_PUMP_PIN}, TempSensor{"reflow_temp", HLT_TEMP_PIN, HLT_TEMP_ID}, "output_flow") {}
 	void update()
 	{
@@ -334,7 +372,7 @@ struct HotLiquorTank : public ComponentTuple<FlowSensor, Heater, Valve, Pump, Te
 	}
 };
 
-struct MashTun : public ComponentTuple<LevelSensor, FlowSensor> {
+struct MashTun : public ComponentTuple<LevelSensor, FlowSensor<MT_OUTPUT_FLOW_PIN>> {
 	MashTun(std::string name) : ComponentTuple(name, "liquid_max", "output_flow") {}
 };
 

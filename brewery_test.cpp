@@ -8,20 +8,28 @@
 
 /*
 	build with:
-		g++ brewery_test.cpp -I ../crow/include/ --std=c++17 -pthread -lwiringPi -lboost_system
+		g++ brewery_test.cpp -I ../crow/include/ --std=c++17 -pthread -lwiringPi -lboost_system -g
+	need to have loaded the 1-wire bus via:
+		sudo dtoverlay w1-gpio gpiopin=26
 */
 
-constexpr auto HLT_HEATER_PIN = 7;
+// relay output
 constexpr auto HLT_REFLOW_VALVE_PIN = 0;
-constexpr auto HLT_PUMP_PIN = 2;
-constexpr auto BREW_KETTLE_HEATER_PIN = 3;
 constexpr auto PUMP_ASSEMBLY_INPUT_VALVE_PIN = 4;
-constexpr auto PUMP_ASSEMBLY_PUMP_PIN = 5;
 constexpr auto PUMP_ASSEMBLY_OUTPUT_VALVE_PIN = 6;
+// I2C connected
 constexpr auto HLT_TEMP_PIN = 65; /* this doesnt map to anything physical, just needs to be unique */
 constexpr auto HLT_TEMP_ID = "0000055823d0";
 constexpr auto PUMP_ASSEMBLY_TEMP_PIN = 66; /* this doesnt map to anything physical, just needs to be unique */
 constexpr auto PUMP_ASSEMBLY_TEMP_ID = "derpderpderp";
+// SSR output
+constexpr auto HLT_HEATER_PIN = 7;
+constexpr auto HLT_PUMP_PIN = 2;
+constexpr auto BREW_KETTLE_HEATER_PIN = 3;
+constexpr auto PUMP_ASSEMBLY_PUMP_PIN = 5;
+// Digital in
+
+// Digital out
 
 struct Named {
 	std::string name;
@@ -190,7 +198,9 @@ public:
 	{}
 	~TempSensor()
 	{
+		auto id = update_thread.native_handle();
 		update_thread.detach(); // bad, but too much work to kill the thread
+		pthread_cancel(id);
 	}
 	virtual double get() {
 		return temp;

@@ -1,15 +1,15 @@
 CXX      := g++
 CXXFLAGS := -pedantic-errors -Wall -Wextra -Werror --std=c++17 -Wno-psabi
 LDFLAGS  := -L/usr/lib -lstdc++ -lm -pthread -lboost_system -latomic -lwiringPi
-BUILD    := ./build
+BUILD    := build
 OBJ_DIR  := $(BUILD)/objects
 APP_DIR  := $(BUILD)/apps
 TARGET   := run_brewery
-INCLUDE  := -Iinclude/ -Icrow/include/ -I/usr/include/boost/
+INCLUDE  := -Iinclude/ -Icrow/include/
 SRC      :=                      \
 	$(wildcard src/*.cpp)
 
-OBJECTS  := $(SRC:%.cpp=$(OBJ_DIR)/%.o)
+OBJECTS  := $(SRC:src/%.cpp=$(OBJ_DIR)/%.o)
 DEPENDENCIES \
 	:= $(OBJECTS:.o=.d)
 
@@ -17,8 +17,10 @@ all: crow build $(APP_DIR)/$(TARGET)
 
 crow:
 	git clone https://github.com/crowcpp/crow.git
+	cd crow && git checkout b18fbb18f02264f56abf7ebdf664ce3f5f97ece5
+	sed -i 's/constexpr //g' crow/include/crow/version.h
 
-$(OBJ_DIR)/%.o: %.cpp
+$(OBJ_DIR)/%.o: src/%.cpp
 	$(CXX) $(CXXFLAGS) $(INCLUDE) -c $< -MMD -o $@
 
 $(APP_DIR)/$(TARGET): $(OBJECTS)

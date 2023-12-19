@@ -13,23 +13,27 @@
 		sudo dtoverlay w1-gpio gpiopin=26
 */
 
-// relay output
+/* relay output */
 constexpr auto HLT_REFLOW_VALVE_PIN = 0;
 constexpr auto PUMP_ASSEMBLY_INPUT_VALVE_PIN = 4;
 constexpr auto PUMP_ASSEMBLY_OUTPUT_VALVE_PIN = 6;
-// I2C connected
+/* I2C connected */
 constexpr auto HLT_TEMP_PIN = 65; /* this doesnt map to anything physical, just needs to be unique */
 constexpr auto HLT_TEMP_ID = "0000055823d0";
 constexpr auto PUMP_ASSEMBLY_TEMP_PIN = 66; /* this doesnt map to anything physical, just needs to be unique */
 constexpr auto PUMP_ASSEMBLY_TEMP_ID = "derpderpderp";
-// SSR output
-constexpr auto HLT_HEATER_PIN = 7;
+/* SSR output */
 constexpr auto HLT_PUMP_PIN = 2;
-constexpr auto BREW_KETTLE_HEATER_PIN = 3;
 constexpr auto PUMP_ASSEMBLY_PUMP_PIN = 5;
-// Digital in
+/* Digital in */
+// HLT_INPUT_FLOW_PIN
+// HLT_OUTPUT_FLOW_PIN
+// MT_LIQUID_MAX_PIN
+// MT_OUTPUT_FLOW_PIN
 
-// Digital out
+/* Digital out */
+constexpr auto HLT_HEATER_PIN = 7;
+constexpr auto BREW_KETTLE_HEATER_PIN = 3;
 
 struct Named {
 	std::string name;
@@ -199,7 +203,7 @@ public:
 	~TempSensor()
 	{
 		auto id = update_thread.native_handle();
-		update_thread.detach(); // bad, but too much work to kill the thread
+		update_thread.detach();
 		pthread_cancel(id);
 	}
 	virtual double get() {
@@ -310,7 +314,7 @@ class Pump : public Button {
 class Heater : public TargetValue<double> {
 	DigitalPin pin;
 public:
-	Heater(std::string name, int MinValue, int MaxValue, int pin_num) : TargetValue<double>(name, MinValue, MaxValue), pin(pin_num, OUTPUT, false) {
+	Heater(std::string name, int MinValue, int MaxValue, int pin_num) : TargetValue<double>(name, MinValue, MaxValue), pin(pin_num, OUTPUT, true) {
 		pin.setup();
 	}
 	void on() {pin.on();}
@@ -318,7 +322,7 @@ public:
 };
 
 struct HotLiquorTank : public ComponentTuple<FlowSensor, Heater, Valve, Pump, TempSensor, FlowSensor> {
-	HotLiquorTank(std::string name) : ComponentTuple(name, "input_flow", Heater{"heater",100,200,7}, Valve{"reflow_valve",0}, Pump{"pump",2}, TempSensor{"reflow_temp", HLT_TEMP_PIN, HLT_TEMP_ID}, "output_flow") {}
+	HotLiquorTank(std::string name) : ComponentTuple(name, "input_flow", Heater{"heater",50,200,HLT_HEATER_PIN}, Valve{"reflow_valve",HLT_REFLOW_VALVE_PIN}, Pump{"pump",HLT_PUMP_PIN}, TempSensor{"reflow_temp", HLT_TEMP_PIN, HLT_TEMP_ID}, "output_flow") {}
 	void update()
 	{
 		auto& heater = this->get<1>();

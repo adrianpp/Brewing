@@ -86,11 +86,24 @@ int main(int argc, char* argv[])
 			}
 		});
 	crow::SimpleApp app;
-	if( argc > 1 )
-		if( argv[1] == std::string("-debug") )
-			app.loglevel(crow::LogLevel::Debug);
-
     crow::mustache::set_base("/home/pi/Brewing");
+
+	for(int arg = 1; arg < argc; ++arg )
+	{
+		std::string argstr = argv[arg];
+		if( argstr == "--debug" or argstr == "-debug" )
+			app.loglevel(crow::LogLevel::Debug);
+		if( argstr == "--template_dir" )
+		{
+			if( arg+1 < argc )
+				crow::mustache::set_base(argv[++arg]);
+			else
+			{
+				std::cerr << "need directory after --template_dir option!" << std::endl;
+				return -1;
+			}
+		}
+	}
 
     CROW_ROUTE(app, "/")
     ([&]{
@@ -110,6 +123,11 @@ int main(int argc, char* argv[])
 	([&]{
 		system("shutdown -P now");
 		return "shutting down system.";
+	});
+	CROW_ROUTE(app, "/quit")
+	([&]{
+		app.stop();
+		return "";
 	});
 	
 	brewery.registerEndpoints(app,"");

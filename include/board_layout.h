@@ -4,7 +4,7 @@
 template<int physical_pin>
 constexpr auto physical_to_wiring()
 {
-	constexpr auto WIRING_PINS[40] = {
+	constexpr int WIRING_PINS[40] = {
 		-1, // PIN1 = 3v3
 		-1, // PIN2 = 5v
 		 8, // PIN3 = Wiring 8

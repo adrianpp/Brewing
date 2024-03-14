@@ -15,6 +15,6 @@ pkg_install() {
 	fi
 }
 
-pkg_install libboost-dev
+pkg_install libboost-all-dev
 pkg_install	wiringpi "wget https://project-downloads.drogon.net/wiringpi-latest.deb && sudo dpkg -i wiringpi-latest.deb"
 

@@ -13,12 +13,15 @@ OBJECTS  := $(SRC:src/%.cpp=$(OBJ_DIR)/%.o)
 DEPENDENCIES \
 	:= $(OBJECTS:.o=.d)
 
-all: crow build $(APP_DIR)/$(TARGET)
+all: crow systemDepends build $(APP_DIR)/$(TARGET)
 
 crow:
 	git clone https://github.com/crowcpp/crow.git
 	cd crow && git checkout b18fbb18f02264f56abf7ebdf664ce3f5f97ece5
 	sed -i 's/constexpr //g' crow/include/crow/version.h
+
+systemDepends:
+	./get_system_dependencies.sh
 
 $(OBJ_DIR)/%.o: src/%.cpp
 	$(CXX) $(CXXFLAGS) $(INCLUDE) -c $< -MMD -o $@

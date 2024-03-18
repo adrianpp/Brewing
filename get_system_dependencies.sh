@@ -9,12 +9,10 @@ pkg_install() {
 		if [ "" = "$INSTALL_CMD" ]; then
 			sudo apt-get --yes install $PKG
 		else
-			$INSTALL_CMD
+			eval $INSTALL_CMD
 		fi
-		$2
 	fi
 }
 
 pkg_install libboost-all-dev
-pkg_install	wiringpi "wget https://project-downloads.drogon.net/wiringpi-latest.deb && sudo dpkg -i wiringpi-latest.deb"
 

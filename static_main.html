@@ -3,6 +3,7 @@
 <script src="//code.jquery.com/jquery-1.12.4.js"></script>
 <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
 <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.js"></script>
 <title>{{title}}</title>
 <style>
 	body {
@@ -77,6 +78,20 @@ $(document).ready(function(){
 			$(selector+"_label").css('color','black');
 		});
 	}
+	function updateGraph(chart, endpoint, selectorText, selectorGraph) {
+		$.getJSON(endpoint+"/status/"+(chart.data.labels.length-1), function(data) {
+			for (e in data)
+			{
+				if( !data[e] )
+					continue;
+				chart.data.labels.push(data[e].x);
+				chart.data.datasets[0].data.push(data[e].y);
+				chart.update();
+				const path = endpoint.split("/");
+				$(selectorText).html(path[path.length-1] + " : " + data[e].y);
+			}
+		});
+	}
 	function registerText(endpoint, selector) {
 		setInterval(function(){ updateText(endpoint, selector); }, 1000);
 	}
@@ -96,6 +111,22 @@ $(document).ready(function(){
 		var changedFunc = function(){$(selector+"_label").css('color','red').html(path[path.length-1]+"_target : " + $(selector).prop('value'));};
 		$(selector).on('input',changedFunc);
 		setInterval(updateFunc, 1000);
+	}
+	function registerGraph(endpoint, selectorText, selectorGraph) {
+		var chart = new Chart(document.querySelector(selectorGraph),
+		{
+			type: "line",
+			data: {
+				labels: [0],
+				datasets: [{
+					label: selectorText,
+					data: [0]
+				}]
+			},
+			options: {
+			}
+		});
+		setInterval(function(){ updateGraph(chart, endpoint, selectorText, selectorGraph); }, 2000);
 	}
 
 {{{update_js}}}

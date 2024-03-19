@@ -77,14 +77,9 @@ int main(int argc, char* argv[])
 {
 	wiringPiSetup();
 	Brewery brewery("brewery");
-	std::thread update_thread([&](){
-			while(true)
-			{
-				brewery.update();
-				using namespace std::chrono_literals;
-				std::this_thread::sleep_for(100ms);
-			}
-		});
+	RepeatThread update_thread([&](){
+		brewery.update();
+	}, 100);
 	crow::SimpleApp app;
     crow::mustache::set_base("/home/pi/Brewing");
 

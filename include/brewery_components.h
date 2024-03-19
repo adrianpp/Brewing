@@ -21,41 +21,106 @@ public:
 	void off()const {digitalWrite(pin, active_high?LOW:HIGH);}
 };
 
-class TempSensor : public ReadableValue<double> {
-	int pin_num;
-	std::thread update_thread;
-	std::atomic<double> temp = 0.0;
-	void update() {
-		while(true) {
-			temp = (analogRead(pin_num) / 10.0) * 1.8 + 32; // return in F
+struct RepeatThread {
+	bool finished = false;
+	unsigned ms_count = 0;
+	std::thread t;
+	template<class F>
+	RepeatThread(F f, unsigned ms_sleep_time) : t([=](){
+		while(!finished)
+		{
+			if( ms_count == 0 )
+				f();
+			++ms_count;
+			if( ms_count == ms_sleep_time )
+				ms_count = 0;
 			using namespace std::chrono_literals;
-			std::this_thread::sleep_for(2000ms);
+			std::this_thread::sleep_for(1ms);
 		}
+	})
+	{}
+	~RepeatThread()
+	{
+		finished = true;
+		t.join();
+	}
+};
+
+class TempSensor : public ComponentBase {
+	int pin_num;
+	std::vector<double> tempHistory;
+	std::mutex mut;
+	RepeatThread update_thread;
+	void update() {
+		auto temp = (analogRead(pin_num) / 10.0) * 1.8 + 32; // return in F
+		mut.lock();
+		tempHistory.push_back(temp);
+		mut.unlock();
 	}
 public:
-	TempSensor(std::string name, int pin_num, const char* deviceId) : 
-		ReadableValue<double>(name),
+	TempSensor(std::string name, int pin_num, const char* deviceId) :
+	    ComponentBase(name),
 		pin_num{pin_num},
-		update_thread{[&](){this->update();}}
+		update_thread([&](){this->update();},2000)
 	{
 		ds18b20Setup(pin_num, deviceId);
 	}
 	TempSensor(const TempSensor& rhs) :
-		ReadableValue<double>(rhs.getName()),
+		ComponentBase(rhs.getName()),
 		pin_num{rhs.pin_num},
-		update_thread{[&](){this->update();}}
+		update_thread([&](){this->update();},2000)
 	{}
-	~TempSensor()
-	{
-		auto id = update_thread.native_handle();
-		update_thread.detach();
-		pthread_cancel(id);
-	}
-	virtual double get() {
-		return getTempF();
+	crow::json::wvalue getStatus() override {
+		return {};
 	}
 	double getTempF() {
-		return temp;
+		if( tempHistory.size() )
+		{
+			std::lock_guard<std::mutex> g{mut};
+			return tempHistory.back();
+		}
+		else
+			return 0.0;
+	}
+	virtual std::string generateSelector(std::vector<std::string> parent)
+	{
+		std::string selector;
+		for(auto p : parent)
+			selector += "#" + p + " > ";
+		selector += "#" + this->getName();
+		return selector;
+	}
+	virtual std::string generateEndpoint(std::vector<std::string> parent)
+	{
+		std::string endpoint;
+		for(auto p : parent)
+			endpoint += "/" + p;
+		endpoint += "/" + this->getName();
+		return endpoint;
+	}
+	std::string generateLayout() override {
+		return "<div id=\"" + this->getName() + "\"></div>\n"
+			   "<canvas id=\"" + this->getName() + "_graph\" style=\"width:100%;max-width:700px\"></canvas>\n";
+	}
+	void registerEndpoints(crow::SimpleApp& app, std::string endpointPrefix) override {
+		app.route_dynamic(endpointPrefix+"/"+this->getName()+"/status/<int>")
+		([&](int last){
+			crow::json::wvalue ret;
+			mut.lock();
+			for(unsigned int i = last; i < tempHistory.size(); ++i)
+			{
+				ret[i]["x"] = i * 2;
+				ret[i]["y"] = tempHistory[i];
+			}
+			mut.unlock();
+			return ret;
+		});
+	}
+	std::string generateUpdateJS(std::vector<std::string> parent) override
+	{
+		std::string selector = generateSelector(parent);
+		std::string endpoint = generateEndpoint(parent);
+		return "registerGraph('" + endpoint + "', '" + selector + "', '" + selector + "_graph');\n";
 	}
 };
 

@@ -52,18 +52,34 @@
 </style>
 </head>
 <body>
+<div id="downStatus"></div>
 {{{brewery_layout}}}
 <script>
 
+var miss_count = 0;
 $(document).ready(function(){
+	function countedJSON(endpoint, func) {
+		if( miss_count < 5 )
+		{
+			$("#downStatus").html("");
+			$.getJSON(endpoint, func)
+				.fail(function(){miss_count++;})
+				.done(function(){miss_count=0;});
+		}
+		else
+		{
+			$("#downStatus").html("Server appears down!");
+			$("#downStatus").css("color", "red");
+		}
+	}
 	function updateText(endpoint, selector) {
-		$.getJSON(endpoint+"/status", function(data) {
+		countedJSON(endpoint+"/status", function(data) {
 			const path = endpoint.split("/");
 			$(selector).html(path[path.length-1] + " : " + data);
 		});
 	}
 	function updateButton(endpoint, selector) {
-		$.getJSON(endpoint+"/status", function(data) {
+		countedJSON(endpoint+"/status", function(data) {
 			if( !$.isNumeric(data) || data == 0 )
 				$(selector).css('color','red');
 			else
@@ -71,7 +87,7 @@ $(document).ready(function(){
 		});
 	}
 	function updateTargetValue(endpoint, selector) {
-		$.getJSON(endpoint+"/status", function(data) {
+		countedJSON(endpoint+"/status", function(data) {
 			$(selector).prop("value", data);
 			const path = endpoint.split("/");
 			$(selector+"_label").html(path[path.length-1] + "_target : " + data);
@@ -79,7 +95,7 @@ $(document).ready(function(){
 		});
 	}
 	function updateGraph(chart, endpoint, selectorText, selectorGraph) {
-		$.getJSON(endpoint+"/status/"+(chart.data.labels.length-1), function(data) {
+		countedJSON(endpoint+"/status/"+(chart.data.labels.length-1), function(data) {
 			for (e in data)
 			{
 				if( !data[e] )

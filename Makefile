@@ -16,6 +16,12 @@ ifeq (,$(filter mock,$(MAKECMDGOALS)))
 	SRC := $(filter-out $(MOCK_SRC), $(SRC))
 endif
 
+ifneq (,$(filter debug,$(MAKECMDGOALS)))
+	CXXFLAGS += -DDEBUG -g
+else ifneq (,$(filter release,$(MAKECMDGOALS)))
+	CXXFLAGS += -O2
+endif
+
 all: crow WiringPi systemDepends build $(APP_DIR)/$(TARGET)
 
 crow:
@@ -47,14 +53,6 @@ $(APP_DIR)/$(TARGET): $(OBJECTS)
 build:
 	@mkdir -p $(APP_DIR)
 	@mkdir -p $(OBJ_DIR)
-
-debug: CXXFLAGS += -DDEBUG -g
-debug: all
-
-release: CXXFLAGS += -O2
-release: all
-
-mock: all
 
 clean:
 	-@rm -rvf $(BUILD)

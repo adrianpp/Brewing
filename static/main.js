@@ -7,10 +7,11 @@ function countedJSON(endpoint, func) {
 			.fail(function(){miss_count++;})
 			.done(function(){miss_count=0;});
 	}
-	else
+	else if ( !$("#downStatus").dialog("isOpen") )
 	{
 		$("#downStatus").html("Server appears down!");
 		$("#downStatus").css("color", "red");
+		$("#downStatus").dialog("open");
 	}
 }
 function updateText(endpoint, selector) {

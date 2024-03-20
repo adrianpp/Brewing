@@ -1,63 +1,42 @@
 <html>
 <head>
-<script src="//code.jquery.com/jquery-1.12.4.js"></script>
-<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
-<link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.js"></script>
+<script src="static/jquery-1.12.4.js"></script>
+<script src="static/jquery-ui.js"></script>
+<link rel="stylesheet" href="static/jquery-ui.css">
+<script src="static/Chart.js"></script>
+<link rel="stylesheet" href="static/main.css">
 <title>{{title}}</title>
-<style>
-	body {
-		background-color: white;
-		border:2px;
-		font-size:5vw;
-		color:black;
-	}
-	button {
-		font-size:7vw;
-	}
-	input[type='range']  {
-		-webkit-appearance: none ;
-		width:200px;
-		height:80px;
-	}
-	input[type='range']::-webkit-slider-runnable-track {
-		-webkit-appearance: none ;
-		appearance: none ;
-		border-radius: 5px;
-		box-shadow: inset 1px 1px 1px rgba(000,000,000,0.10);
-		background-color: #CCC;
-		height: 16px;
-		vertical-align:middle;
-		border: none;
-		cursor: pointer;
-	}
-	input[type='range']::-webkit-slider-thumb {
-		-webkit-appearance: none;
-		border-radius: 100%;
-		background-color: #037cd5;
-		box-shadow: inset 0 0 0 4px #CCC, inset 0 0 4px #CCC, inset 0 0 0 4px #CCC;
-		height: 32px;
-		width: 32px;
-		vertical-align:middle;
-		border: none;
-		cursor: pointer;
-		margin-top: -6px;
-	}
-	input[type='range']::-webkit-slider-thumb:hover { 
-		background: #fdd921;
-	}
-	input[type='range']:active::-webkit-slider-thumb { 
-		background: #fdd921; 
-	}
-</style>
 </head>
 <body>
-<div id="downStatus"></div>
+<div id="tabs">
+	<ul>
+		<li><a href="#Brewery">Brewery Control</a></li>
+		<li><a href="#RecipeConfig">Recipe Config</a></li>
+		<li><a href="#BreweryConfig">Brewery Config</a></li>
+	</ul>
+	<div id="Brewery">
 {{{brewery_layout}}}
+	</div>
+	<div id="RecipeConfig">
+	</div>
+	<div id="BreweryConfig">
+	</div>
+</div>
+<div id="downStatus" title="Error" style="red">
+	<p>Server Appears Down!</p>
+</div>
 <script src="static/main.js"></script>
 <script>
 $(document).ready(function(){
 {{{update_js}}}
+	$("#tabs").tabs();
+	$("#downStatus").dialog({
+		dialogClass: "no-close",
+		modal: true,
+		autoOpen: false,
+		width: ($(window).width()*0.75),
+		position: { my: "center top", at: "center top", of: window }
+		});
 }); // close document.ready()
 </script>
 </body>

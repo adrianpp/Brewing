@@ -1,0 +1,61 @@
+body {
+	background-color: white;
+	border:2px;
+	font-size:5vw;
+	color:black;
+}
+button {
+	font-size:7vw;
+}
+input[type='range']  {
+	-webkit-appearance: none ;
+	width:200px;
+	height:80px;
+}
+input[type='range']::-webkit-slider-runnable-track {
+	-webkit-appearance: none ;
+	appearance: none ;
+	border-radius: 5px;
+	box-shadow: inset 1px 1px 1px rgba(000,000,000,0.10);
+	background-color: #CCC;
+	height: 16px;
+	vertical-align:middle;
+	border: none;
+	cursor: pointer;
+}
+input[type='range']::-webkit-slider-thumb {
+	-webkit-appearance: none;
+	border-radius: 100%;
+	background-color: #037cd5;
+	box-shadow: inset 0 0 0 4px #CCC, inset 0 0 4px #CCC, inset 0 0 0 4px #CCC;
+	height: 32px;
+	width: 32px;
+	vertical-align:middle;
+	border: none;
+	cursor: pointer;
+	margin-top: -6px;
+}
+input[type='range']::-webkit-slider-thumb:hover { 
+	background: #fdd921;
+}
+input[type='range']:active::-webkit-slider-thumb { 
+	background: #fdd921; 
+}
+
+.no-close .ui-dialog-titlebar-close {
+	display: none;
+}
+
+#tabs {
+	width: 100%;
+}
+ul {
+	display: table;
+	table-layout: fixed;
+	width: 100%;
+}
+
+li {
+	display: table-cell;
+	font-size:3.5vw;
+}

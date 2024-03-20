@@ -74,6 +74,15 @@ struct Brewery : public ComponentTuple<HotLiquorTank, MashTun, BrewKettle, PumpA
 	}
 };
 
+std::string generateLayout(Brewery& ct)
+{
+	std::string ret;
+	for_each_component(ct, [&](auto&& comp) {
+			ret += generateLayout(std::forward<decltype(comp)>(comp));
+		});
+	return ret;
+}
+
 int main(int argc, char* argv[])
 {
 	wiringPiSetup();

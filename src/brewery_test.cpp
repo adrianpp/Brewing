@@ -109,12 +109,6 @@ int main(int argc, char* argv[])
 		ctx.set("update_js", generateUpdateJS(brewery, {}));
 		return crow_mustache_load("static_main.html", ctx);
     });
-    app.route_dynamic("/static_main.js",
-    [&]{
-		JSONWrapper ctx;
-		return crow_mustache_load("static_main.js", ctx);
-    });
-
 	app.route_dynamic("/reboot",
 	[&]{
 		system("shutdown -r now");

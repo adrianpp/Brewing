@@ -179,7 +179,7 @@ public:
 class Button : public WriteableValue<int> {
 	DigitalPin pin;
 public:
-	Button(std::string name, int pin_num, int v=0) : WriteableValue<int>(name,v), pin(pin_num, OUTPUT, false) {
+	Button(std::string name, int pin_num, int v=0) : WriteableValue<int>(name,v), pin(pin_num, OUTPUT) {
 		pin.setup();
 	}
 	virtual void registerEndpoints(SimpleApp& app, std::string endpointPrefix) override {
@@ -247,7 +247,7 @@ class Pump : public Button {
 class Heater : public TargetValue<double> {
 	DigitalPin pin;
 public:
-	Heater(std::string name, int MinValue, int MaxValue, int pin_num) : TargetValue<double>(name, MinValue, MaxValue), pin(pin_num, OUTPUT, true) {
+	Heater(std::string name, int MinValue, int MaxValue, int pin_num) : TargetValue<double>(name, MinValue, MaxValue), pin(pin_num, OUTPUT) {
 		pin.setup();
 	}
 	void on() {pin.on();}

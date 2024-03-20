@@ -1,9 +1,9 @@
 #ifndef BREWERY_COMPONENTS_H__
 #define BREWERY_COMPONENTS_H__
 
-#include "crow.h"
 #include <thread>
 #include <atomic>
+#include <mutex>
 #include <string>
 #include <wiringPi.h>
 #include <ds18b20.h>
@@ -70,7 +70,7 @@ public:
 		pin_num{rhs.pin_num},
 		update_thread([&](){this->update();},2000)
 	{}
-	crow::json::wvalue getStatus() override {
+	JSONWrapper getStatus() override {
 		return {};
 	}
 	double getTempF() {
@@ -82,44 +82,30 @@ public:
 		else
 			return 0.0;
 	}
-	virtual std::string generateSelector(std::vector<std::string> parent)
-	{
-		std::string selector;
-		for(auto p : parent)
-			selector += "#" + p + " > ";
-		selector += "#" + this->getName();
-		return selector;
-	}
-	virtual std::string generateEndpoint(std::vector<std::string> parent)
-	{
-		std::string endpoint;
-		for(auto p : parent)
-			endpoint += "/" + p;
-		endpoint += "/" + this->getName();
-		return endpoint;
-	}
 	std::string generateLayout() override {
 		return "<div id=\"" + this->getName() + "\"></div>\n"
 			   "<canvas id=\"" + this->getName() + "_graph\" style=\"width:100%;max-width:700px\"></canvas>\n";
 	}
-	void registerEndpoints(crow::SimpleApp& app, std::string endpointPrefix) override {
-		app.route_dynamic(endpointPrefix+"/"+this->getName()+"/status/<int>")
-		([&](int last){
-			crow::json::wvalue ret;
+	void registerEndpoints(SimpleApp& app, std::string endpointPrefix) override {
+		app.route_dynamic(endpointPrefix+"/"+this->getName()+"/status/<int>",
+		[&](int last){
+			JSONWrapper ret;
 			mut.lock();
 			for(unsigned int i = last; i < tempHistory.size(); ++i)
 			{
-				ret[i]["x"] = i * 2;
-				ret[i]["y"] = tempHistory[i];
+				JSONWrapper v;
+				v.set("x", std::to_string(i*2));
+				v.set("y", std::to_string(tempHistory[i]));
+				ret.set(i, v);
 			}
 			mut.unlock();
-			return ret;
+			return ret.dump();
 		});
 	}
 	std::string generateUpdateJS(std::vector<std::string> parent) override
 	{
-		std::string selector = generateSelector(parent);
-		std::string endpoint = generateEndpoint(parent);
+		std::string selector = generateSelector(this->getName(), parent);
+		std::string endpoint = generateEndpoint(this->getName(), parent);
 		return "registerGraph('" + endpoint + "', '" + selector + "', '" + selector + "_graph');\n";
 	}
 };
@@ -158,9 +144,9 @@ public:
 	}
 	FlowSensor() { 
 		resetFlowCount();
-		CROW_LOG_INFO << "FlowSensor<" << PinNum << ", " << EdgesPerLiter << ">:";
-		CROW_LOG_INFO << "initialEdgeCount = " << initialEdgeCount;
-		CROW_LOG_INFO << "edgeCount() = " << edgeCount();
+//		CROW_LOG_INFO << "FlowSensor<" << PinNum << ", " << EdgesPerLiter << ">:";
+//		CROW_LOG_INFO << "initialEdgeCount = " << initialEdgeCount;
+//		CROW_LOG_INFO << "edgeCount() = " << edgeCount();
 	}
 	double getFlowInLiters() {
 		return edgeCount() / static_cast<double>(EdgesPerLiter);
@@ -196,12 +182,12 @@ public:
 	Button(std::string name, int pin_num, int v=0) : WriteableValue<int>(name,v), pin(pin_num, OUTPUT, false) {
 		pin.setup();
 	}
-	virtual void registerEndpoints(crow::SimpleApp& app, std::string endpointPrefix) override {
+	virtual void registerEndpoints(SimpleApp& app, std::string endpointPrefix) override {
 		ReadableValue<int>::registerEndpoints(app, endpointPrefix);
-		app.route_dynamic(endpointPrefix+"/"+this->getName()+"/toggle")
-		([&](){
+		app.route_dynamic(endpointPrefix+"/"+this->getName()+"/toggle",
+		[&](){
 			this->set(!this->get());
-			return "";
+			return std::string{};
 		});
 	}
 	virtual void set(int v) override {if(v) pin.on(); else pin.off(); WriteableValue<int>::set(v);}
@@ -210,8 +196,8 @@ public:
 	}
 	virtual std::string generateUpdateJS(std::vector<std::string> parent)
 	{
-		std::string selector = generateSelector(parent);
-		std::string endpoint = generateEndpoint(parent);
+		std::string selector = generateSelector(this->getName(), parent);
+		std::string endpoint = generateEndpoint(this->getName(), parent);
 		return "registerButton('" + endpoint + "', '" + selector + "');\n";
 	}
 };
@@ -224,28 +210,28 @@ class TargetValue : public WriteableValue<T> {
 	T MaxValue;
 public:
 	TargetValue(std::string name, T min, T max) : WriteableValue<T>(name, min), MinValue(min), MaxValue(max) {}
-	virtual void registerEndpoints(crow::SimpleApp& app, std::string endpointPrefix) override {
+	void registerEndpoints(SimpleApp& app, std::string endpointPrefix) override {
 		WriteableValue<T>::registerEndpoints(app, endpointPrefix);
-		app.route_dynamic(endpointPrefix+"/"+this->getName()+"/set_target")
-		([&](const crow::request& req){
+		app.route_dynamic(endpointPrefix+"/"+this->getName()+"/set_target",
+		[&](const CrowRequest& req){
 			std::stringstream ss;
-			ss << req.url_params.get("value");
+			ss << req.url_params_get("value");
 			T v;
 			ss >> v;
 			this->set(v);
-			return "";
+			return std::string{};
 		});
 	}
-	virtual std::string generateLayout() override {
+	std::string generateLayout() override {
 		std::string ret;
 	   	ret += "<div id=\"" + this->getName() + "_label\"></div>\n";
 	   	ret += "<input id=\"" + this->getName() + "\" type='range'/>\n";
 		return ret;
 	}
-	virtual std::string generateUpdateJS(std::vector<std::string> parent) override
+	std::string generateUpdateJS(std::vector<std::string> parent) override
 	{
-		std::string selector = WriteableValue<T>::generateSelector(parent);
-		std::string endpoint = WriteableValue<T>::generateEndpoint(parent);
+		std::string selector = generateSelector(this->getName(), parent);
+		std::string endpoint = generateEndpoint(this->getName(), parent);
 		return "registerTargetValue(\'" + endpoint + "\', \'" + selector + "\'," + std::to_string(MinValue) + ", " + std::to_string(MaxValue) + ");\n";
 	}
 };
@@ -267,8 +253,6 @@ public:
 	void on() {pin.on();}
 	void off() {pin.off();}
 };
-
-
 
 #endif
 

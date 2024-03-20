@@ -1,5 +1,3 @@
-#define CROW_MAIN
-#include "crow.h"
 #include <string>
 #include <vector>
 #include <thread>
@@ -9,6 +7,7 @@
 #include "crow_integration.h"
 #include "brewery_components.h"
 #include "board_layout.h"
+#include <iostream>
 
 /*
 	build with:
@@ -80,18 +79,18 @@ int main(int argc, char* argv[])
 	RepeatThread update_thread([&](){
 		brewery.update();
 	}, 100);
-	crow::SimpleApp app;
-    crow::mustache::set_base("/home/pi/Brewing");
+	SimpleApp app;
+	crow_mustache_set_base("/home/admin/Brewing");
 
 	for(int arg = 1; arg < argc; ++arg )
 	{
 		std::string argstr = argv[arg];
 		if( argstr == "--debug" or argstr == "-debug" )
-			app.loglevel(crow::LogLevel::Debug);
+			app.loglevel(SimpleApp::Debug);
 		if( argstr == "--template_dir" )
 		{
 			if( arg+1 < argc )
-				crow::mustache::set_base(argv[++arg]);
+				crow_mustache_set_base(argv[++arg]);
 			else
 			{
 				std::cerr << "need directory after --template_dir option!" << std::endl;
@@ -100,32 +99,32 @@ int main(int argc, char* argv[])
 		}
 	}
 
-    CROW_ROUTE(app, "/")
-    ([&]{
-        crow::mustache::context ctx;
-		ctx["title"] = "brewery controller test";
-		ctx["brewery_layout"] = brewery.generateLayout();
-		ctx["update_js"] = brewery.generateUpdateJS({});
-        return crow::mustache::load("static_main.html").render(ctx);
+    app.route_dynamic("/",
+    [&]{
+		JSONWrapper ctx;
+		ctx.set("title", "brewery controller test");
+		ctx.set("brewery_layout", brewery.generateLayout());
+		ctx.set("update_js", brewery.generateUpdateJS({}));
+		return crow_mustache_load("static_main.html", ctx);
     });
 
-	CROW_ROUTE(app, "/reboot")
-	([&]{
+	app.route_dynamic("/reboot",
+	[&]{
 		system("shutdown -r now");
 		return "rebooting system.";
 	});
-	CROW_ROUTE(app, "/shutdown")
-	([&]{
+	app.route_dynamic("/shutdown",
+	[&]{
 		system("shutdown -P now");
 		return "shutting down system.";
 	});
-	CROW_ROUTE(app, "/quit")
-	([&]{
+	app.route_dynamic("/quit",
+	[&]{
 		app.stop();
 		return "";
 	});
-	
+
 	brewery.registerEndpoints(app,"");
-	
-	app.port(40080).run();
+
+	app.run_on_port(40080);
 }

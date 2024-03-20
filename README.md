@@ -14,6 +14,10 @@ after cloning, cd into the cloned directory and `make`.
 
 can use `make mock all` to not use wiringPi and instead use mock interface.
 
+# Brewery Plumbing Design
+
+![3 vessel plumbing](https://github.com/adrianpp/Brewing/blob/master/docs/hardplumb_3_vessel.png?raw=true)
+
 # Hardware Connections
 
 ## 1-wire/i2c:

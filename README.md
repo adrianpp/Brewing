@@ -12,7 +12,7 @@ https://docs.github.com/en/authentication/connecting-to-github-with-ssh/working-
 
 after cloning, cd into the cloned directory and `make`.
 
-can use `make mock` to not use wiringPi and instead use mock interface.
+can use `make mock all` to not use wiringPi and instead use mock interface.
 
 # Hardware Connections
 
@@ -31,3 +31,8 @@ can use `make mock` to not use wiringPi and instead use mock interface.
 | 1             | close       | blue  |
 | 2             | open        | brown/red   |
 | 3             | ground      | yellow |
+
+## Breakout Board
+![schematic](https://github.com/adrianpp/Brewing/blob/master/docs/Schematic_Beer%20Breakout%20with%20Relays_2024-03-19.png?raw=true)
+![top layer](https://github.com/adrianpp/Brewing/blob/master/docs/TOP_Beer%20Breakout%20with%20Relays_2024-03-19.png?raw=true)
+![bottom layer](https://github.com/adrianpp/Brewing/blob/master/docs/BOT_Beer%20Breakout%20with%20Relays_2024-03-19.png?raw=true)

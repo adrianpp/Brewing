@@ -46,6 +46,10 @@ input[type='range']:active::-webkit-slider-thumb {
 	display: none;
 }
 
+#downStatus {
+	font-size:6vw;
+}
+
 #tabs {
 	width: 100%;
 }

@@ -5,9 +5,41 @@
 #include <atomic>
 #include <mutex>
 #include <string>
+#include <tuple>
 #include <wiringPi.h>
 #include <ds18b20.h>
-#include "components.h"
+
+struct Named {
+	std::string name;
+public:
+	Named(std::string n) : name(n) {}
+	std::string getName() const {return name;}
+};
+
+template<class...Comps>
+struct ComponentTuple : Named, std::tuple<Comps...> {
+	template<class...Ts>
+	ComponentTuple(std::string s, Ts&&...ts) : Named(s), std::tuple<Comps...>(std::forward<Ts>(ts)...) {}
+};
+
+namespace std {
+template<class...Comps>
+struct tuple_size<ComponentTuple<Comps...>> {
+	static constexpr auto value = sizeof...(Comps);
+};
+}
+
+template<class...Ts, class Func>
+void for_each_component(ComponentTuple<Ts...>& tup, Func&& f)
+{
+	std::apply(
+			[&](auto&&...children){
+				([&](auto&& child) {
+					f(child);
+				 }(children),...);
+			},
+			tup);
+}
 
 class DigitalPin {
 	const int pin;
@@ -46,7 +78,7 @@ struct RepeatThread {
 	}
 };
 
-class TempSensor : public ComponentBase {
+class TempSensor : public Named {
 	int pin_num;
 	std::vector<double> tempHistory;
 	std::mutex mut;
@@ -59,20 +91,17 @@ class TempSensor : public ComponentBase {
 	}
 public:
 	TempSensor(std::string name, int pin_num, const char* deviceId) :
-	    ComponentBase(name),
+	    Named(name),
 		pin_num{pin_num},
 		update_thread([&](){this->update();},2000)
 	{
 		ds18b20Setup(pin_num, deviceId);
 	}
 	TempSensor(const TempSensor& rhs) :
-		ComponentBase(rhs.getName()),
+		Named(rhs.getName()),
 		pin_num{rhs.pin_num},
 		update_thread([&](){this->update();},2000)
 	{}
-	JSONWrapper getStatus() override {
-		return {};
-	}
 	double getTempF() {
 		if( tempHistory.size() )
 		{
@@ -82,32 +111,16 @@ public:
 		else
 			return 0.0;
 	}
-	std::string generateLayout() override {
-		return "<div id=\"" + this->getName() + "\"></div>\n"
-			   "<canvas id=\"" + this->getName() + "_graph\" style=\"width:100%;max-width:700px\"></canvas>\n";
-	}
-	void registerEndpoints(SimpleApp& app, std::string endpointPrefix) override {
-		app.route_dynamic(endpointPrefix+"/"+this->getName()+"/status/<int>",
-		[&](int last){
-			JSONWrapper ret;
-			mut.lock();
-			for(unsigned int i = last; i < tempHistory.size(); ++i)
-			{
-				JSONWrapper v;
-				v.set("x", std::to_string(i*2));
-				v.set("y", std::to_string(tempHistory[i]));
-				ret.set(i, v);
-			}
-			mut.unlock();
-			return ret.dump();
-		});
-	}
-	std::string generateUpdateJS(std::vector<std::string> parent) override
-	{
-		std::string selector = generateSelector(this->getName(), parent);
-		std::string endpoint = generateEndpoint(this->getName(), parent);
-		return "registerGraph('" + endpoint + "', '" + selector + "', '" + selector + "_graph');\n";
-	}
+	friend class HistoryAccess;
+	class HistoryAccess {
+		TempSensor& t;
+	public:
+		HistoryAccess(TempSensor& t) : t{t} {t.mut.lock();}
+		double operator [](unsigned i) {return t.tempHistory[i];}
+		std::size_t size() {return t.tempHistory.size();}
+		~HistoryAccess() {t.mut.unlock();}
+	};
+	HistoryAccess getHistory() {return {*this};}
 };
 
 template<int PinNum, int EdgeType>
@@ -127,6 +140,12 @@ public:
 
 template<int PinNum, int EdgeType>
 std::atomic<int> CountEdges<PinNum,EdgeType>::edges = 0;
+
+template<class T>
+struct ReadableValue : public Named {
+	using Named::Named;
+	virtual T get()=0;
+};
 
 static constexpr auto LitersPerGallon = 3.785412;
 
@@ -182,27 +201,8 @@ public:
 	Button(std::string name, int pin_num, int v=0) : WriteableValue<int>(name,v), pin(pin_num, OUTPUT) {
 		pin.setup();
 	}
-	virtual void registerEndpoints(SimpleApp& app, std::string endpointPrefix) override {
-		ReadableValue<int>::registerEndpoints(app, endpointPrefix);
-		app.route_dynamic(endpointPrefix+"/"+this->getName()+"/toggle",
-		[&](){
-			this->set(!this->get());
-			return std::string{};
-		});
-	}
 	virtual void set(int v) override {if(v) pin.on(); else pin.off(); WriteableValue<int>::set(v);}
-	virtual std::string generateLayout() override {
-		return "<button id=\"" + this->getName() + "\">" + this->getName() + "</button>\n";
-	}
-	virtual std::string generateUpdateJS(std::vector<std::string> parent)
-	{
-		std::string selector = generateSelector(this->getName(), parent);
-		std::string endpoint = generateEndpoint(this->getName(), parent);
-		return "registerButton('" + endpoint + "', '" + selector + "');\n";
-	}
 };
-
-#include <sstream>
 
 template<class T>
 class TargetValue : public WriteableValue<T> {
@@ -210,30 +210,8 @@ class TargetValue : public WriteableValue<T> {
 	T MaxValue;
 public:
 	TargetValue(std::string name, T min, T max) : WriteableValue<T>(name, min), MinValue(min), MaxValue(max) {}
-	void registerEndpoints(SimpleApp& app, std::string endpointPrefix) override {
-		WriteableValue<T>::registerEndpoints(app, endpointPrefix);
-		app.route_dynamic(endpointPrefix+"/"+this->getName()+"/set_target",
-		[&](const CrowRequest& req){
-			std::stringstream ss;
-			ss << req.url_params_get("value");
-			T v;
-			ss >> v;
-			this->set(v);
-			return std::string{};
-		});
-	}
-	std::string generateLayout() override {
-		std::string ret;
-	   	ret += "<div id=\"" + this->getName() + "_label\"></div>\n";
-	   	ret += "<input id=\"" + this->getName() + "\" type='range'/>\n";
-		return ret;
-	}
-	std::string generateUpdateJS(std::vector<std::string> parent) override
-	{
-		std::string selector = generateSelector(this->getName(), parent);
-		std::string endpoint = generateEndpoint(this->getName(), parent);
-		return "registerTargetValue(\'" + endpoint + "\', \'" + selector + "\'," + std::to_string(MinValue) + ", " + std::to_string(MaxValue) + ");\n";
-	}
+	T getMin(){return MinValue;}
+	T getMax(){return MaxValue;}
 };
 
 class Valve : public Button {

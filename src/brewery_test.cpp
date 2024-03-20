@@ -8,7 +8,7 @@
 #include "crow_integration.h"
 #include "brewery_components.h"
 #include "board_layout.h"
-#include "components.h"
+#include "web_components.h"
 
 /*
 	build with:
@@ -44,8 +44,8 @@ struct HotLiquorTank : public ComponentTuple<FlowSensor<HLT_INPUT_FLOW_PIN>, Hea
 	HotLiquorTank(std::string name) : ComponentTuple(name, "input_flow", Heater{"heater",50,200,HLT_HEATER_PIN}, Valve{"reflow_valve",HLT_REFLOW_VALVE_PIN}, Pump{"pump",HLT_PUMP_PIN}, TempSensor{"reflow_temp", HLT_TEMP_PIN, HLT_TEMP_ID}, "output_flow") {}
 	void update()
 	{
-		auto& heater = this->get<1>();
-		auto& temp = this->get<4>();
+		auto& heater = std::get<1>(*this);
+		auto& temp = std::get<4>(*this);
 		if( temp.getTempF() < heater.get() )
 			heater.on();
 		else
@@ -69,7 +69,7 @@ struct Brewery : public ComponentTuple<HotLiquorTank, MashTun, BrewKettle, PumpA
 	Brewery(std::string name) : ComponentTuple(name, "hlt", "mt", "bk", "pump_assembly") {}
 	void update()
 	{
-		auto& HLT = this->get<0>();
+		auto& HLT = std::get<0>(*this);
 		HLT.update();
 	}
 };
@@ -105,8 +105,8 @@ int main(int argc, char* argv[])
     [&]{
 		JSONWrapper ctx;
 		ctx.set("title", "brewery controller test");
-		ctx.set("brewery_layout", brewery.generateLayout());
-		ctx.set("update_js", brewery.generateUpdateJS({}));
+		ctx.set("brewery_layout", generateLayout(brewery));
+		ctx.set("update_js", generateUpdateJS(brewery, {}));
 		return crow_mustache_load("static_main.html", ctx);
     });
     app.route_dynamic("/static_main.js",
@@ -131,7 +131,7 @@ int main(int argc, char* argv[])
 		return "";
 	});
 
-	brewery.registerEndpoints(app,"");
+	registerEndpoints(brewery, app,"");
 
 	app.run_on_port(40080);
 }

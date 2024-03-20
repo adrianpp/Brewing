@@ -40,8 +40,8 @@ constexpr auto MT_OUTPUT_FLOW_PIN = DIG3_PIN;
 constexpr auto HLT_HEATER_PIN = DIG4_PIN;
 constexpr auto BREW_KETTLE_HEATER_PIN = DIG5_PIN;
 
-struct HotLiquorTank : public ComponentTuple<FlowSensor<HLT_INPUT_FLOW_PIN>, Heater, Valve, Pump, TempSensor, FlowSensor<HLT_OUTPUT_FLOW_PIN>> {
-	HotLiquorTank(std::string name) : ComponentTuple(name, "input_flow", Heater{"heater",50,200,HLT_HEATER_PIN}, Valve{"reflow_valve",HLT_REFLOW_VALVE_PIN}, Pump{"pump",HLT_PUMP_PIN}, TempSensor{"reflow_temp", HLT_TEMP_PIN, HLT_TEMP_ID}, "output_flow") {}
+struct HotLiquorTank : public ComponentTuple<FlowSensor, Heater, Valve, Pump, TempSensor, FlowSensor> {
+	HotLiquorTank(std::string name) : ComponentTuple(name, FlowSensor{"input_flow", HLT_INPUT_FLOW_PIN}, Heater{"heater",50,200,HLT_HEATER_PIN}, Valve{"reflow_valve",HLT_REFLOW_VALVE_PIN}, Pump{"pump",HLT_PUMP_PIN}, TempSensor{"reflow_temp", HLT_TEMP_PIN, HLT_TEMP_ID}, FlowSensor{"output_flow", HLT_OUTPUT_FLOW_PIN}) {}
 	void update()
 	{
 		auto& heater = std::get<1>(*this);
@@ -53,8 +53,8 @@ struct HotLiquorTank : public ComponentTuple<FlowSensor<HLT_INPUT_FLOW_PIN>, Hea
 	}
 };
 
-struct MashTun : public ComponentTuple<LevelSensor, FlowSensor<MT_OUTPUT_FLOW_PIN>> {
-	MashTun(std::string name) : ComponentTuple(name, "liquid_max", "output_flow") {}
+struct MashTun : public ComponentTuple<LevelSensor, FlowSensor> {
+	MashTun(std::string name) : ComponentTuple(name, "liquid_max", FlowSensor{"output_flow", MT_OUTPUT_FLOW_PIN}) {}
 };
 
 struct BrewKettle : public ComponentTuple<Button> {

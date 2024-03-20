@@ -1,0 +1,60 @@
+diff --git a/wiringPi/wiringPi.c b/wiringPi/wiringPi.c
+index 28dfe61..d869b86 100644
+--- a/wiringPi/wiringPi.c
++++ b/wiringPi/wiringPi.c
+@@ -406,7 +406,8 @@ static int sysFds [64] =
+ 
+ // ISR Data
+ 
+-static void (*isrFunctions [64])(void) ;
++static void (*isrFunctions [64])(void*) ;
++static void* isrData[64] ;
+ 
+ 
+ // Doing it the Arduino way with lookup tables...
+@@ -2160,7 +2161,7 @@ static void *interruptHandler (UNU void *arg)
+ 
+   for (;;)
+     if (waitForInterrupt (myPin, -1) > 0)
+-      isrFunctions [myPin] () ;
++      isrFunctions [myPin] (isrData[myPin]) ;
+ 
+   return NULL ;
+ }
+@@ -2173,8 +2174,15 @@ static void *interruptHandler (UNU void *arg)
+  *	back to the user supplied function.
+  *********************************************************************************
+  */
+-
++static void wiringPiISR_helper(void* func) {
++	void (*function)(void) = (void(*)(void))func;
++	function();
++}
+ int wiringPiISR (int pin, int mode, void (*function)(void))
++{
++	return wiringPiISR_data(pin, mode, wiringPiISR_helper, (void*)function);
++}
++int wiringPiISR_data(int pin, int mode, void (*function)(void*), void* user_data)
+ {
+   pthread_t threadId ;
+   const char *modeS ;
+@@ -2255,6 +2263,7 @@ int wiringPiISR (int pin, int mode, void (*function)(void))
+     read (sysFds [bcmGpioPin], &c, 1) ;
+ 
+   isrFunctions [pin] = function ;
++  isrData [pin] = user_data;
+ 
+   pthread_mutex_lock (&pinMutex) ;
+     pinPass = pin ;
+diff --git a/wiringPi/wiringPi.h b/wiringPi/wiringPi.h
+index 0212016..54e443d 100644
+--- a/wiringPi/wiringPi.h
++++ b/wiringPi/wiringPi.h
+@@ -256,6 +256,7 @@ extern          void digitalWriteByte2   (int value) ;
+ 
+ extern int  waitForInterrupt    (int pin, int mS) ;
+ extern int  wiringPiISR         (int pin, int mode, void (*function)(void)) ;
++extern int  wiringPiISR_data    (int pin, int mode, void (*function)(void*), void*) ;
+ 
+ // Threads
+ 

@@ -2,7 +2,6 @@
 #define BREWERY_COMPONENTS_H__
 
 #include <thread>
-#include <atomic>
 #include <mutex>
 #include <string>
 #include <tuple>
@@ -123,45 +122,42 @@ public:
 	HistoryAccess getHistory() {return {*this};}
 };
 
-template<int PinNum, int EdgeType>
 class CountEdges {
-	static std::atomic<int> edges;
-	static void update() {
-		++edges;
+	int edges;
+	static void update(void* v) {
+		CountEdges* me = static_cast<CountEdges*>(v);
+		++(me->edges);
 	}
 public:
-	CountEdges() {
-		wiringPiISR(PinNum, EdgeType, &update);
+	CountEdges(int PinNum, int EdgeType) {
+		wiringPiISR_data(PinNum, EdgeType, &update, this);
 	}
 	int getEdges() {
 		return edges;
 	}
 };
 
-template<int PinNum, int EdgeType>
-std::atomic<int> CountEdges<PinNum,EdgeType>::edges = 0;
-
 template<class T>
 struct ReadableValue : public Named {
 	using Named::Named;
 	virtual T get()=0;
+	virtual ~ReadableValue()=default;
 };
 
 static constexpr auto LitersPerGallon = 3.785412;
 
-template<int PinNum, int EdgesPerLiter=600>
 class FlowSensor : public ReadableValue<double> {
-	CountEdges<PinNum, INT_EDGE_RISING> sensor;
-	int initialEdgeCount;
+	CountEdges sensor;
+	int initialEdgeCount = 0;
 	int edgeCount() {
 		return sensor.getEdges() - initialEdgeCount;
 	}
+	int EdgesPerLiter;
 public:
-	using ReadableValue<double>::ReadableValue;
 	void resetFlowCount() {
 		initialEdgeCount = sensor.getEdges();
 	}
-	FlowSensor() { 
+	FlowSensor(std::string n, int PinNum, int EdgesPerLiter=600) : ReadableValue<double>{n}, sensor{PinNum, INT_EDGE_RISING}, EdgesPerLiter{EdgesPerLiter} {
 		resetFlowCount();
 //		CROW_LOG_INFO << "FlowSensor<" << PinNum << ", " << EdgesPerLiter << ">:";
 //		CROW_LOG_INFO << "initialEdgeCount = " << initialEdgeCount;

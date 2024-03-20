@@ -32,6 +32,7 @@ crow:
 ifeq (,$(filter mock,$(MAKECMDGOALS)))
 WiringPi:
 	git clone https://github.com/WiringPi/WiringPi
+	cd WiringPi && git apply --ignore-space-change --ignore-whitespace ../wiring_add_userdata.diff
 	cd WiringPi && ./build
 else
 WiringPi:

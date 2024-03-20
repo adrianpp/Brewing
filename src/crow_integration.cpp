@@ -2,24 +2,6 @@
 #define CROW_MAIN
 #include "crow.h"
 
-std::string generateSelector(std::string name, std::vector<std::string> parent)
-{
-	std::string selector;
-	for(auto p : parent)
-		selector += "#" + p + " > ";
-	selector += "#" + name;
-	return selector;
-}
-
-std::string generateEndpoint(std::string name, std::vector<std::string> parent)
-{
-	std::string endpoint;
-	for(auto p : parent)
-		endpoint += "/" + p;
-	endpoint += "/" + name;
-	return endpoint;
-}
-
 void crow_mustache_set_base(std::string base)
 {
 	crow::mustache::set_base(base);
@@ -115,7 +97,3 @@ void SimpleApp::stop()
 	impl->stop();
 }
 
-std::string ComponentBase::generateUpdateJS(std::vector<std::string>)
-{
-       return "";
-}

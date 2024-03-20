@@ -7,7 +7,7 @@
 #include <string>
 #include <wiringPi.h>
 #include <ds18b20.h>
-#include "crow_integration.h"
+#include "components.h"
 
 class DigitalPin {
 	const int pin;

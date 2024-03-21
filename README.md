@@ -36,6 +36,14 @@ can use `make mock all` to not use wiringPi and instead use mock interface.
 | 2             | open        | brown/red   |
 | 3             | ground      | yellow |
 
+## Hall-effect Flow Meter:
+
+| Aviation Pin  | Connection  | Color |
+|---------------|-------------|-------|
+| 1             | ground       | black  |
+| 2             | power        | red   |
+| 3             | signal       | yellow |
+
 ## Breakout Board
 ![schematic](https://github.com/adrianpp/Brewing/blob/master/docs/Schematic_Beer%20Breakout%20with%20Relays_2024-03-19.png?raw=true)
 ![top layer](https://github.com/adrianpp/Brewing/blob/master/docs/TOP_Beer%20Breakout%20with%20Relays_2024-03-19.png?raw=true)

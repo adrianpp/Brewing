@@ -127,9 +127,9 @@ std::string generateUpdateJS(TargetValue<T>& t, std::vector<std::string> parent)
 template std::string generateLayout<TEMPL_TYPE>(PARAM<TEMPL_TYPE>&); \
 template void registerEndpoints<TEMPL_TYPE>(PARAM<TEMPL_TYPE>&,SimpleApp&,std::string); \
 template std::string generateUpdateJS<TEMPL_TYPE>(PARAM<TEMPL_TYPE>&,std::vector<std::string>);
-EXPLICIT_INSTANTIATE(ReadableValue, int);
-EXPLICIT_INSTANTIATE(ReadableValue, double);
-EXPLICIT_INSTANTIATE(TargetValue, int);
-EXPLICIT_INSTANTIATE(TargetValue, double);
+EXPLICIT_INSTANTIATE(ReadableValue, int)
+EXPLICIT_INSTANTIATE(ReadableValue, double)
+EXPLICIT_INSTANTIATE(TargetValue, int)
+EXPLICIT_INSTANTIATE(TargetValue, double)
 
 

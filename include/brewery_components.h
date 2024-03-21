@@ -4,7 +4,6 @@
 #include <thread>
 #include <mutex>
 #include <string>
-#include <tuple>
 #include <wiringPi.h>
 #include <ds18b20.h>
 
@@ -15,29 +14,70 @@ public:
 	std::string getName() const {return name;}
 };
 
-template<class...Comps>
-struct ComponentTuple : Named, std::tuple<Comps...> {
+namespace Details {
+template<class T>
+class construct {
+	template<std::size_t...I, class...Ts>
+		static T from_helper_impl(std::index_sequence<I...>, std::tuple<Ts...>&& tup) {
+			return T{std::get<I>(tup)...};
+		}
+	public:
+	template<class F>
+		static T from(F&& f)
+		{
+			return {f};
+		}
 	template<class...Ts>
-	ComponentTuple(std::string s, Ts&&...ts) : Named(s), std::tuple<Comps...>(std::forward<Ts>(ts)...) {}
+		static T from(std::tuple<Ts...>&& tup)
+		{
+			return from_helper_impl(std::make_index_sequence<sizeof...(Ts)>{}, std::move(tup));
+		}
+};
+} /* namespace Details */
+
+template<class First, class...Rest>
+struct ComponentTuple : Named {
+	First first;
+	ComponentTuple<Rest...> rest;
+	template<class PFirst, class...PRest>
+		ComponentTuple(std::string n, PFirst&& pf, PRest&&...pr) :
+			Named(n),
+			first{Details::construct<First>::from(std::forward<PFirst>(pf))},
+		rest{n, std::forward<PRest>(pr)...}
+	{}
+	template<std::size_t I>
+	auto& get()
+	{
+		static_assert( I < 1+sizeof...(Rest) );
+		if constexpr (I == 0)
+			return first;
+		else
+			return rest.template get<I-1>();
+	}
 };
 
-namespace std {
-template<class...Comps>
-struct tuple_size<ComponentTuple<Comps...>> {
-	static constexpr auto value = sizeof...(Comps);
+template<class First>
+struct ComponentTuple<First> : Named {
+	First first;
+	template<class PFirst>
+		ComponentTuple(std::string n, PFirst&& pf) :
+			Named(n),
+			first{Details::construct<First>::from(std::forward<PFirst>(pf))}
+	{}
+	template<std::size_t I>
+	auto& get()
+	{
+		static_assert( I == 0 );
+		return first;
+	}
 };
-}
 
 template<class...Ts, class Func>
 void for_each_component(ComponentTuple<Ts...>& tup, Func&& f)
 {
-	std::apply(
-			[&](auto&&...children){
-				([&](auto&& child) {
-					f(child);
-				 }(children),...);
-			},
-			tup);
+	f(tup.first);
+	if constexpr (sizeof...(Ts) > 1)
+		for_each_component(tup.rest, f);
 }
 
 class DigitalPin {
@@ -132,6 +172,7 @@ public:
 	CountEdges(int PinNum, int EdgeType) {
 		wiringPiISR_data(PinNum, EdgeType, &update, this);
 	}
+	CountEdges(const CountEdges&)=delete; // the ISR uses our address, so we cant move or copy
 	int getEdges() {
 		return edges;
 	}

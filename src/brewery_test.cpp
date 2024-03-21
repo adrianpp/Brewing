@@ -41,11 +41,19 @@ constexpr auto HLT_HEATER_PIN = DIG4_PIN;
 constexpr auto BREW_KETTLE_HEATER_PIN = DIG5_PIN;
 
 struct HotLiquorTank : public ComponentTuple<FlowSensor, Heater, Valve, Pump, TempSensor, FlowSensor> {
-	HotLiquorTank(std::string name) : ComponentTuple(name, FlowSensor{"input_flow", HLT_INPUT_FLOW_PIN}, Heater{"heater",50,200,HLT_HEATER_PIN}, Valve{"reflow_valve",HLT_REFLOW_VALVE_PIN}, Pump{"pump",HLT_PUMP_PIN}, TempSensor{"reflow_temp", HLT_TEMP_PIN, HLT_TEMP_ID}, FlowSensor{"output_flow", HLT_OUTPUT_FLOW_PIN}) {}
+	HotLiquorTank(std::string name) :
+		ComponentTuple(name,
+				std::make_tuple("input_flow", HLT_INPUT_FLOW_PIN),
+				std::make_tuple("heater",50,200,HLT_HEATER_PIN),
+				std::make_tuple("reflow_valve",HLT_REFLOW_VALVE_PIN),
+				std::make_tuple("pump",HLT_PUMP_PIN),
+				std::make_tuple("reflow_temp", HLT_TEMP_PIN, HLT_TEMP_ID),
+				std::make_tuple("output_flow", HLT_OUTPUT_FLOW_PIN)
+			) {}
 	void update()
 	{
-		auto& heater = std::get<1>(*this);
-		auto& temp = std::get<4>(*this);
+		auto& heater = this->get<1>();
+		auto& temp = this->get<4>();
 		if( temp.getTempF() < heater.get() )
 			heater.on();
 		else
@@ -54,22 +62,32 @@ struct HotLiquorTank : public ComponentTuple<FlowSensor, Heater, Valve, Pump, Te
 };
 
 struct MashTun : public ComponentTuple<LevelSensor, FlowSensor> {
-	MashTun(std::string name) : ComponentTuple(name, "liquid_max", FlowSensor{"output_flow", MT_OUTPUT_FLOW_PIN}) {}
+	MashTun(std::string name) :
+		ComponentTuple(name,
+				"liquid_max",
+				std::make_tuple("output_flow", MT_OUTPUT_FLOW_PIN)
+			) {}
 };
 
 struct BrewKettle : public ComponentTuple<Button> {
-	BrewKettle(std::string name) : ComponentTuple(name, Button{"heater",BREW_KETTLE_HEATER_PIN}) {}
+	BrewKettle(std::string name) : ComponentTuple(name, std::make_tuple("heater",BREW_KETTLE_HEATER_PIN)) {}
 };
 
 struct PumpAssembly : public ComponentTuple<Valve, Pump, TempSensor, Valve> {
-	PumpAssembly(std::string name) : ComponentTuple(name, Valve{"input_valve",PUMP_ASSEMBLY_INPUT_VALVE_PIN}, Pump{"pump",PUMP_ASSEMBLY_PUMP_PIN}, TempSensor{"temp", PUMP_ASSEMBLY_TEMP_PIN, PUMP_ASSEMBLY_TEMP_ID}, Valve{"output_valve",PUMP_ASSEMBLY_OUTPUT_VALVE_PIN}) {}
+	PumpAssembly(std::string name) :
+		ComponentTuple(name,
+				std::make_tuple("input_valve",PUMP_ASSEMBLY_INPUT_VALVE_PIN),
+				std::make_tuple("pump",PUMP_ASSEMBLY_PUMP_PIN),
+				std::make_tuple("temp", PUMP_ASSEMBLY_TEMP_PIN, PUMP_ASSEMBLY_TEMP_ID),
+				std::make_tuple("output_valve",PUMP_ASSEMBLY_OUTPUT_VALVE_PIN)
+			) {}
 };
 
 struct Brewery : public ComponentTuple<HotLiquorTank, MashTun, BrewKettle, PumpAssembly> {
 	Brewery(std::string name) : ComponentTuple(name, "hlt", "mt", "bk", "pump_assembly") {}
 	void update()
 	{
-		auto& HLT = std::get<0>(*this);
+		auto& HLT = this->get<0>();
 		HLT.update();
 	}
 };

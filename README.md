@@ -14,6 +14,10 @@ after cloning, cd into the cloned directory and `make`.
 
 can use `make mock all` to not use wiringPi and instead use mock interface.
 
+Will almost certainly need to autostart the web service; can add a line to `sudo crontab -e` like:
+
+`@reboot /home/admin/Brewing/startserver.sh >> /home/admin/Brewing/serverexec.log`
+
 # Brewery Plumbing Design
 
 ![3 vessel plumbing](https://github.com/adrianpp/Brewing/blob/master/docs/hardplumb_3_vessel.png?raw=true)

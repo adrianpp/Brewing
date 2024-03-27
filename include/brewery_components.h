@@ -4,8 +4,8 @@
 #include <thread>
 #include <mutex>
 #include <string>
+#include <vector>
 #include <wiringPi.h>
-#include <ds18b20.h>
 
 struct Named {
 	std::string name;
@@ -117,45 +117,26 @@ struct RepeatThread {
 	}
 };
 
+std::size_t time_in_seconds();
+
 class TempSensor : public Named {
 	int pin_num;
-	std::vector<double> tempHistory;
+	std::size_t start_time;
+	// time in seconds since start of program -> temp in F
+	std::vector<std::pair<std::size_t,double>> tempHistory;
 	std::mutex mut;
 	RepeatThread update_thread;
-	void update() {
-		auto temp = (analogRead(pin_num) / 10.0) * 1.8 + 32; // return in F
-		mut.lock();
-		tempHistory.push_back(temp);
-		mut.unlock();
-	}
+	void update();
 public:
-	TempSensor(std::string name, int pin_num, const char* deviceId) :
-	    Named(name),
-		pin_num{pin_num},
-		update_thread([&](){this->update();},2000)
-	{
-		ds18b20Setup(pin_num, deviceId);
-	}
-	TempSensor(const TempSensor& rhs) :
-		Named(rhs.getName()),
-		pin_num{rhs.pin_num},
-		update_thread([&](){this->update();},2000)
-	{}
-	double getTempF() {
-		if( tempHistory.size() )
-		{
-			std::lock_guard<std::mutex> g{mut};
-			return tempHistory.back();
-		}
-		else
-			return 0.0;
-	}
+	TempSensor(std::string name, int pin_num, const char* deviceId);
+	TempSensor(const TempSensor& rhs);
+	double getTempF();
 	friend class HistoryAccess;
 	class HistoryAccess {
 		TempSensor& t;
 	public:
 		HistoryAccess(TempSensor& t) : t{t} {t.mut.lock();}
-		double operator [](unsigned i) {return t.tempHistory[i];}
+		auto operator [](unsigned i) {return t.tempHistory[i];}
 		std::size_t size() {return t.tempHistory.size();}
 		~HistoryAccess() {t.mut.unlock();}
 	};
@@ -164,14 +145,9 @@ public:
 
 class CountEdges {
 	int edges;
-	static void update(void* v) {
-		CountEdges* me = static_cast<CountEdges*>(v);
-		++(me->edges);
-	}
+	static void update(void* v);
 public:
-	CountEdges(int PinNum, int EdgeType) {
-		wiringPiISR_data(PinNum, EdgeType, &update, this);
-	}
+	CountEdges(int PinNum, int EdgeType);
 	CountEdges(const CountEdges&)=delete; // the ISR uses our address, so we cant move or copy
 	int getEdges() {
 		return edges;

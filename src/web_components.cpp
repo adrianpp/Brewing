@@ -29,14 +29,14 @@ void registerEndpoints(TempSensor& t, SimpleApp& app, std::string endpointPrefix
 			[&](std::size_t last){
 			JSONWrapper ret;
 			auto hist = t.getHistory();
-			// dont send more than 10 minutes of history at one time
-			auto max_history = std::min(hist.size(), last+300);
+			// dont send too many elements at the same time
+			auto max_history = std::min(hist.size(), last+120);
 
 			for(unsigned int i = last; i < max_history; ++i)
 			{
 				JSONWrapper v;
-				v.set("x", std::to_string(i*2));
-				v.set("y", std::to_string(hist[i]));
+				v.set("x", std::to_string(hist[i].first));
+				v.set("y", std::to_string(hist[i].second));
 				ret.set(i, v);
 			}
 			return ret.dump();

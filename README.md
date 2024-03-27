@@ -14,6 +14,14 @@ after cloning, cd into the cloned directory and `make`.
 
 can use `make mock all` to not use wiringPi and instead use mock interface.
 
+Will almost certainly need to autostart the web service; can add a line to `crontab -e` like:
+
+`@reboot sleep 60; cd /home/admin/Brewing && ./build/apps/run_brewery >> serverexec.log`
+
+Also be sure to set up gpio by adding a line to `/boot/config.txt` like:
+
+`dtoverlay=gpio`
+
 # Brewery Plumbing Design
 
 ![3 vessel plumbing](https://github.com/adrianpp/Brewing/blob/master/docs/hardplumb_3_vessel.png?raw=true)
@@ -35,6 +43,22 @@ can use `make mock all` to not use wiringPi and instead use mock interface.
 | 1             | close       | blue  |
 | 2             | open        | brown/red   |
 | 3             | ground      | yellow |
+
+## Hall-effect Flow Meter:
+
+| Aviation Pin  | Connection  | Color |
+|---------------|-------------|-------|
+| 1             | ground       | black  |
+| 2             | power        | red   |
+| 3             | signal       | yellow |
+
+## Heater:
+
+| TRS Jack  | Connection  | Color |
+|---------------|-------------|-------|
+| Sleeve        | ground       | black  |
+| Ring          | power        | red   |
+| Tip           | signal       | yellow |
 
 ## Breakout Board
 ![schematic](https://github.com/adrianpp/Brewing/blob/master/docs/Schematic_Beer%20Breakout%20with%20Relays_2024-03-19.png?raw=true)

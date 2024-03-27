@@ -89,13 +89,13 @@ function registerGraph(endpoint, selectorText, selectorGraph) {
 function registerSelect(endpoint, selectorText) {
 	var updateFunc = function(){
 		countedJSON(endpoint, function(data) {
-			console.log("data is: ", data);
 			var options = [];
 			for( e in data)
 			{
 				console.log(e);
 				options.push("<option value='" + data[e].value + "'>" + data[e].value + "</option>");
 			}
+			$(selectorText+" option").each(function(index,option) {$(option).remove();});
 			$(selectorText).append(options.join("")).selectmenu();
 		});
 	};

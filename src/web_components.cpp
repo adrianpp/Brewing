@@ -26,10 +26,13 @@ std::string generateLayout(TempSensor& t)
 void registerEndpoints(TempSensor& t, SimpleApp& app, std::string endpointPrefix)
 {
 	app.route_dynamic(endpointPrefix+"/"+t.getName()+"/status/<int>",
-			[&](int last){
+			[&](std::size_t last){
 			JSONWrapper ret;
 			auto hist = t.getHistory();
-			for(unsigned int i = last; i < hist.size(); ++i)
+			// dont send more than 10 minutes of history at one time
+			auto max_history = std::min(hist.size(), last+300);
+
+			for(unsigned int i = last; i < max_history; ++i)
 			{
 				JSONWrapper v;
 				v.set("x", std::to_string(i*2));

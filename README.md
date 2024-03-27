@@ -52,6 +52,14 @@ Also be sure to set up gpio by adding a line to `/boot/config.txt` like:
 | 2             | power        | red   |
 | 3             | signal       | yellow |
 
+## Heater:
+
+| TRS Jack  | Connection  | Color |
+|---------------|-------------|-------|
+| Sleeve        | ground       | black  |
+| Ring          | power        | red   |
+| Tip           | signal       | yellow |
+
 ## Breakout Board
 ![schematic](https://github.com/adrianpp/Brewing/blob/master/docs/Schematic_Beer%20Breakout%20with%20Relays_2024-03-19.png?raw=true)
 ![top layer](https://github.com/adrianpp/Brewing/blob/master/docs/TOP_Beer%20Breakout%20with%20Relays_2024-03-19.png?raw=true)

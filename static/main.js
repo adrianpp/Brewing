@@ -3,6 +3,7 @@ function countedJSON(endpoint, func) {
 	if( miss_count < 5 )
 	{
 		$("#downStatus").html("");
+		$("#downStatus").dialog("close");
 		$.getJSON(endpoint, func)
 			.fail(function(){miss_count++;})
 			.done(function(){miss_count=0;});
@@ -42,7 +43,16 @@ function updateGraph(chart, endpoint, selectorText, selectorGraph) {
 		{
 			if( !data[e] )
 				continue;
-			chart.data.labels.push(data[e].x);
+			var time = Number(data[e].x);
+			var hours = Math.floor(time / 3600);
+			time = time - hours * 3600;
+			var minutes = Math.floor(time / 60);
+			var seconds  = time - minutes * 60;
+			if( minutes < 10 )
+				minutes = "0" + minutes;
+			if( seconds < 10 )
+				seconds = "0" + seconds;
+			chart.data.labels.push(hours+":"+minutes+":"+seconds);
 			chart.data.datasets[0].data.push(data[e].y);
 			chart.update();
 			const path = endpoint.split("/");

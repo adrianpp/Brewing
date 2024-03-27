@@ -86,4 +86,18 @@ function registerGraph(endpoint, selectorText, selectorGraph) {
 		});
 	setInterval(function(){ updateGraph(chart, endpoint, selectorText, selectorGraph); }, 2000);
 }
-
+function registerSelect(endpoint, selectorText) {
+	var updateFunc = function(){
+		countedJSON(endpoint, function(data) {
+			console.log("data is: ", data);
+			var options = [];
+			for( e in data)
+			{
+				console.log(e);
+				options.push("<option value='" + data[e].value + "'>" + data[e].value + "</option>");
+			}
+			$(selectorText).append(options.join("")).selectmenu();
+		});
+	};
+	setInterval(updateFunc, 5000);
+}

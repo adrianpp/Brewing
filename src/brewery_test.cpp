@@ -9,6 +9,7 @@
 #include "brewery_components.h"
 #include "board_layout.h"
 #include "web_components.h"
+#include "i2c.h"
 
 /*
 	build with:
@@ -150,6 +151,29 @@ int main(int argc, char* argv[])
 	[&]{
 		app.stop();
 		return "";
+	});
+	app.route_dynamic("/i2c/status",
+	[&]() -> std::string {
+		if( is_i2c_setup() )
+			return "true";
+		return "false";
+	});
+	app.route_dynamic("/i2c/list",
+	[&]{
+		std::string ret("[");
+		bool first = true;
+		for(auto&& e : get_i2c_devices())
+		{
+			if( first )
+				first = false;
+			else
+				ret += ",";
+			ret += "{\"value\":\"";
+			ret += e;
+			ret += "\"}";
+		}
+		ret += "]";
+		return ret;
 	});
 
 	registerEndpoints(brewery, app,"");

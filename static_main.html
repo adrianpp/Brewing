@@ -20,6 +20,14 @@
 	<div id="RecipeConfig">
 	</div>
 	<div id="BreweryConfig">
+	<div id="i2c_status"></div>
+	<form action="#">
+		<fieldset>
+			<label for="i2c_temp1">First I2C device: </label>
+			<select name="i2c_temp1" id="i2c_temp1"></select>
+		</fieldset>
+	</form>
+	<div id="i2c_temp1"></div>
 	</div>
 </div>
 <div id="downStatus" title="Error" style="red">
@@ -29,6 +37,8 @@
 <script>
 $(document).ready(function(){
 {{{update_js}}}
+	registerText("/i2c", "#i2c_status");
+	registerSelect("/i2c/list", "#i2c_temp1");
 	$("#tabs").tabs();
 	$("#downStatus").dialog({
 		dialogClass: "no-close",

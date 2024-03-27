@@ -14,7 +14,7 @@ after cloning, cd into the cloned directory and `make`.
 
 can use `make mock all` to not use wiringPi and instead use mock interface.
 
-Will almost certainly need to autostart the web service; can add a line to `crontab -e` like:
+Will almost certainly need to autostart the web service; can add a line to `sudo crontab -e` like:
 
 `@reboot sleep 60; cd /home/admin/Brewing && ./build/apps/run_brewery >> serverexec.log`
 

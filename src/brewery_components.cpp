@@ -1,6 +1,19 @@
 #include "brewery_components.h"
 #include <chrono>
+#include <wiringPi.h>
 #include <ds18b20.h>
+
+void DigitalPin::setup() const {
+	pinMode(pin, mode);
+	off();
+}
+void DigitalPin::on() const {
+	digitalWrite(pin, active_high?HIGH:LOW);
+}
+void DigitalPin::off() const {
+	digitalWrite(pin, active_high?LOW:HIGH);
+}
+
 
 std::size_t time_in_seconds()
 {
@@ -46,3 +59,24 @@ CountEdges::CountEdges(int PinNum, int EdgeType) {
 	wiringPiISR_data(PinNum, EdgeType, &update, this);
 }
 
+int FlowSensor::edgeCount() {
+	return sensor.getEdges() - initialEdgeCount;
+}
+void FlowSensor::resetFlowCount() {
+	initialEdgeCount = sensor.getEdges();
+}
+FlowSensor::FlowSensor(std::string n, int PinNum, int EdgesPerLiter) : ReadableValue<double>{n}, sensor{PinNum, INT_EDGE_RISING}, EdgesPerLiter{EdgesPerLiter} {
+	resetFlowCount();
+	//		CROW_LOG_INFO << "FlowSensor<" << PinNum << ", " << EdgesPerLiter << ">:";
+	//		CROW_LOG_INFO << "initialEdgeCount = " << initialEdgeCount;
+	//		CROW_LOG_INFO << "edgeCount() = " << edgeCount();
+}
+double FlowSensor::getFlowInLiters() {
+	return edgeCount() / static_cast<double>(EdgesPerLiter);
+}
+double FlowSensor::getFlowInGallons() {
+	return getFlowInLiters() / LitersPerGallon;
+}
+double FlowSensor::get() {
+	return getFlowInGallons();
+}

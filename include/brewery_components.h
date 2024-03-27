@@ -5,7 +5,6 @@
 #include <mutex>
 #include <string>
 #include <vector>
-#include <wiringPi.h>
 
 struct Named {
 	std::string name;
@@ -81,15 +80,17 @@ void for_each_component(ComponentTuple<Ts...>& tup, Func&& f)
 }
 
 class DigitalPin {
+public:
+	enum Mode {INPUT=0, OUTPUT=1};
+private:
 	const int pin;
-	const int mode;
+	const Mode mode;
 	const bool active_high;
 public:
-	constexpr DigitalPin(int p, int mode=OUTPUT, bool active_high=true) : pin(p), mode(mode), active_high(active_high) {
-	}
-	void setup() const {pinMode(pin, mode);off();}
-	void on() const {digitalWrite(pin, active_high?HIGH:LOW);}
-	void off()const {digitalWrite(pin, active_high?LOW:HIGH);}
+	constexpr DigitalPin(int p, Mode mode=OUTPUT, bool active_high=true) : pin(p), mode(mode), active_high(active_high) {}
+	void setup() const;
+	void on() const;
+	void off() const;
 };
 
 struct RepeatThread {
@@ -166,29 +167,14 @@ static constexpr auto LitersPerGallon = 3.785412;
 class FlowSensor : public ReadableValue<double> {
 	CountEdges sensor;
 	int initialEdgeCount = 0;
-	int edgeCount() {
-		return sensor.getEdges() - initialEdgeCount;
-	}
+	int edgeCount();
 	int EdgesPerLiter;
 public:
-	void resetFlowCount() {
-		initialEdgeCount = sensor.getEdges();
-	}
-	FlowSensor(std::string n, int PinNum, int EdgesPerLiter=600) : ReadableValue<double>{n}, sensor{PinNum, INT_EDGE_RISING}, EdgesPerLiter{EdgesPerLiter} {
-		resetFlowCount();
-//		CROW_LOG_INFO << "FlowSensor<" << PinNum << ", " << EdgesPerLiter << ">:";
-//		CROW_LOG_INFO << "initialEdgeCount = " << initialEdgeCount;
-//		CROW_LOG_INFO << "edgeCount() = " << edgeCount();
-	}
-	double getFlowInLiters() {
-		return edgeCount() / static_cast<double>(EdgesPerLiter);
-	}
-	double getFlowInGallons() {
-		return getFlowInLiters() / LitersPerGallon;
-	}
-	virtual double get() {
-		return getFlowInGallons();
-	}
+	void resetFlowCount();
+	FlowSensor(std::string n, int PinNum, int EdgesPerLiter=600);
+	double getFlowInLiters();
+	double getFlowInGallons();
+	virtual double get();
 };
 
 class LevelSensor : public ReadableValue<int> {
@@ -211,7 +197,7 @@ public:
 class Button : public WriteableValue<int> {
 	DigitalPin pin;
 public:
-	Button(std::string name, int pin_num, int v=0) : WriteableValue<int>(name,v), pin(pin_num, OUTPUT) {
+	Button(std::string name, int pin_num, int v=0) : WriteableValue<int>(name,v), pin(pin_num, DigitalPin::OUTPUT) {
 		pin.setup();
 	}
 	virtual void set(int v) override {if(v) pin.on(); else pin.off(); WriteableValue<int>::set(v);}
@@ -238,7 +224,7 @@ class Pump : public Button {
 class Heater : public TargetValue<double> {
 	DigitalPin pin;
 public:
-	Heater(std::string name, int MinValue, int MaxValue, int pin_num) : TargetValue<double>(name, MinValue, MaxValue), pin(pin_num, OUTPUT) {
+	Heater(std::string name, int MinValue, int MaxValue, int pin_num) : TargetValue<double>(name, MinValue, MaxValue), pin(pin_num, DigitalPin::OUTPUT) {
 		pin.setup();
 	}
 	void on() {pin.on();}

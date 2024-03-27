@@ -88,10 +88,18 @@ function registerGraph(endpoint, selectorText, selectorGraph) {
 				labels: [0],
 				datasets: [{
 					label: selectorText,
-					data: [0]
+					data: []
 				}]
 			},
 			options: {
+				scales: {
+					yAxes: [{
+						display: true,
+						ticks: {
+							beginAtZero: false
+						}
+					}]
+				}
 			}
 		});
 	setInterval(function(){ updateGraph(chart, endpoint, selectorText, selectorGraph); }, 2000);

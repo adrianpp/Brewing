@@ -1,10 +1,5 @@
 #include <string>
-#include <vector>
-#include <thread>
-#include <atomic>
 #include <iostream>
-#include <wiringPi.h>
-#include <ds18b20.h>
 #include "crow_integration.h"
 #include "brewery_components.h"
 #include "board_layout.h"
@@ -101,6 +96,9 @@ std::string generateLayout(Brewery& ct)
 		});
 	return ret;
 }
+
+//instead of including the entire wiringpi header
+extern "C" int wiringPiSetup();
 
 int main(int argc, char* argv[])
 {

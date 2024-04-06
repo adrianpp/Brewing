@@ -14,6 +14,8 @@ DEPENDENCIES = $(OBJECTS:.o=.d)
 ifeq (,$(filter mock,$(MAKECMDGOALS)))
 	LDFLAGS += -lwiringPi
 	SRC := $(filter-out $(MOCK_SRC), $(SRC))
+else
+	CXXFLAGS += -DMOCK
 endif
 
 ifneq (,$(filter debug,$(MAKECMDGOALS)))

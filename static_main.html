@@ -23,11 +23,18 @@
 	<div id="i2c_status"></div>
 	<form action="#">
 		<fieldset>
-			<label for="i2c_temp1">First I2C device: </label>
+			<label for="i2c_temp1">HLT Temp I2C device: </label>
 			<select name="i2c_temp1" id="i2c_temp1"></select>
 		</fieldset>
 	</form>
 	<div id="i2c_temp1"></div>
+	<form action="#">
+		<fieldset>
+			<label for="i2c_temp2">Pump Temp I2C device: </label>
+			<select name="i2c_temp2" id="i2c_temp2"></select>
+		</fieldset>
+	</form>
+	<div id="i2c_temp2"></div>
 	</div>
 </div>
 <div id="downStatus" title="Error" style="red">
@@ -38,7 +45,8 @@
 $(document).ready(function(){
 {{{update_js}}}
 	registerText("/i2c", "#i2c_status");
-	registerSelect("/i2c/list", "#i2c_temp1");
+	registerSelect("/i2c/list", "#i2c_temp1", "/i2c/set_hlt_temp_id/");
+	registerSelect("/i2c/list", "#i2c_temp2", "/i2c/set_pump_temp_id/");
 	$("#tabs").tabs();
 	$("#downStatus").dialog({
 		dialogClass: "no-close",

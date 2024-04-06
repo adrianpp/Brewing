@@ -11,12 +11,17 @@ bool is_i2c_setup()
 std::vector<std::string> get_i2c_devices()
 {
 	std::vector<std::string> ret;
+#ifdef MOCK
+	ret.push_back("050505");
+	ret.push_back("3A3A3A");
+#else
 	for (auto const& dir_entry : std::filesystem::directory_iterator{devices_path})
 	{
 		std::string name = dir_entry.path().filename().string();
 		if( name != "w1_bus_master1" )
 			ret.push_back(name);
 	}
+#endif
 	return ret;
 }
 

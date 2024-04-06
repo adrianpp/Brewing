@@ -104,7 +104,7 @@ function registerGraph(endpoint, selectorText, selectorGraph) {
 		});
 	setInterval(function(){ updateGraph(chart, endpoint, selectorText, selectorGraph); }, 2000);
 }
-function registerSelect(endpoint, selectorText) {
+function registerSelect(endpoint, selectorText, onSelectEndpoint) {
 	var updateFunc = function(){
 		countedJSON(endpoint, function(data) {
 			var options = [];
@@ -115,6 +115,9 @@ function registerSelect(endpoint, selectorText) {
 			}
 			$(selectorText+" option").each(function(index,option) {$(option).remove();});
 			$(selectorText).append(options.join("")).selectmenu();
+			$(selectorText).on("selectmenuselect", function(event,ui){
+				countedJSON(onSelectEndpoint+$(selectorText).val(), function(_ignore){});
+			});
 		});
 	};
 	setInterval(updateFunc, 5000);

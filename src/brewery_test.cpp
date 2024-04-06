@@ -99,6 +99,7 @@ std::string generateLayout(Brewery& ct)
 
 //instead of including the entire wiringpi header
 extern "C" int wiringPiSetup();
+extern "C" int ds18b20Setup (const int pinBase, const char *deviceId);
 
 int main(int argc, char* argv[])
 {
@@ -172,6 +173,14 @@ int main(int argc, char* argv[])
 		}
 		ret += "]";
 		return ret;
+	});
+	app.route_dynamic("/i2c/set_hlt_temp_id/<string>",
+	[&](std::string deviceId) -> std::string {
+		return ds18b20Setup(HLT_TEMP_PIN, deviceId.c_str()) ? "true" : "false";
+	});
+	app.route_dynamic("/i2c/set_pump_temp_id/<string>",
+	[&](std::string deviceId) -> std::string {
+		return ds18b20Setup(PUMP_ASSEMBLY_TEMP_PIN, deviceId.c_str()) ? "true" : "false";
 	});
 
 	registerEndpoints(brewery, app,"");

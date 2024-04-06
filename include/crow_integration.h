@@ -50,6 +50,7 @@ public:
 	SimpleApp();
 	void route_dynamic(std::string endPoint, std::function<std::string()> exec);
 	void route_dynamic(std::string endPoint, std::function<std::string(int)> exec);
+	void route_dynamic(std::string endPoint, std::function<std::string(std::string)> exec);
 	void route_dynamic(std::string endPoint, std::function<std::string(const CrowRequest&)> exec);
 
 	enum LogLevels {Debug};

@@ -75,6 +75,10 @@ void SimpleApp::route_dynamic(std::string endPoint, std::function<std::string(in
 {
 	impl->route_dynamic(std::move(endPoint))(exec);
 }
+void SimpleApp::route_dynamic(std::string endPoint, std::function<std::string(std::string)> exec)
+{
+	impl->route_dynamic(std::move(endPoint))(exec);
+}
 void SimpleApp::route_dynamic(std::string endPoint, std::function<std::string(const CrowRequest&)> exec)
 {
 	impl->route_dynamic(std::move(endPoint))([=](const crow::request& req) {

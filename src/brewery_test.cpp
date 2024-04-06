@@ -22,7 +22,7 @@ constexpr auto PUMP_ASSEMBLY_OUTPUT_VALVE_PIN = RELAY3_PIN;
 constexpr auto HLT_TEMP_PIN = 65; /* this doesnt map to anything physical, just needs to be unique */
 constexpr auto HLT_TEMP_ID = "00000554cba2";
 constexpr auto PUMP_ASSEMBLY_TEMP_PIN = 66; /* this doesnt map to anything physical, just needs to be unique */
-constexpr auto PUMP_ASSEMBLY_TEMP_ID = "derpderpderp";
+constexpr auto PUMP_ASSEMBLY_TEMP_ID = "000005582ff0";
 /* SSR output */
 constexpr auto HLT_PUMP_PIN = SSR1_PIN;
 constexpr auto PUMP_ASSEMBLY_PUMP_PIN = SSR2_PIN;

@@ -8,6 +8,8 @@ bool is_i2c_setup()
 	return std::filesystem::directory_entry{devices_path}.exists();
 }
 
+const std::string prefix = "28-";
+
 std::vector<std::string> get_i2c_devices()
 {
 	std::vector<std::string> ret;
@@ -19,7 +21,7 @@ std::vector<std::string> get_i2c_devices()
 	{
 		std::string name = dir_entry.path().filename().string();
 		if( name != "w1_bus_master1" )
-			ret.push_back(name);
+			ret.push_back(name.substr(prefix.size())); //strip off prefix
 	}
 #endif
 	return ret;

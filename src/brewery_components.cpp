@@ -1,7 +1,7 @@
 #include "brewery_components.h"
 #include <chrono>
 #include <wiringPi.h>
-#include <ds18b20.h>
+#include "i2c.h"
 
 void DigitalPin::setup() const {
 	pinMode(pin, mode);
@@ -33,7 +33,7 @@ TempSensor::TempSensor(std::string name, int pin_num, const char* deviceId) :
 	start_time(time_in_seconds()),
 	update_thread([&](){this->update();},2000)
 {
-	ds18b20Setup(pin_num, deviceId);
+	setI2CDeviceForPin(pin_num, deviceId);
 }
 TempSensor::TempSensor(const TempSensor& rhs) :
 	Named(rhs.getName()),

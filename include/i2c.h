@@ -7,5 +7,8 @@
 bool is_i2c_setup();
 std::vector<std::string> get_i2c_devices();
 
+bool setI2CDeviceForPin(int, std::string);
+std::string getI2CDeviceForPin(int);
+
 #endif
 

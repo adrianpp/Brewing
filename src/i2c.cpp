@@ -27,3 +27,25 @@ std::vector<std::string> get_i2c_devices()
 	return ret;
 }
 
+#include <map>
+
+std::map<int, std::string> pin_to_device_id;
+
+extern "C" int ds18b20Setup (const int pinBase, const char *deviceId);
+
+bool setI2CDeviceForPin(int pin, std::string device_id)
+{
+	auto ret = ds18b20Setup(pin, device_id.c_str());
+	if( ret )
+		pin_to_device_id[pin] = device_id;
+	return ret;
+}
+
+std::string getI2CDeviceForPin(int pin)
+{
+	if( pin_to_device_id.count(pin) )
+		return pin_to_device_id[pin];
+	else
+		return "[unmapped]";
+}
+

@@ -41,8 +41,8 @@
 $(document).ready(function(){
 {{{update_js}}}
 	registerText("/i2c", "#i2c_status");
-	registerSelect("/i2c/list", "#i2c_temp1", "/i2c/set_hlt_temp_id/");
-	registerSelect("/i2c/list", "#i2c_temp2", "/i2c/set_pump_temp_id/");
+	registerSelect("/i2c/list", "#i2c_temp1", "/i2c/hlt_temp_id");
+	registerSelect("/i2c/list", "#i2c_temp2", "/i2c/pump_temp_id");
 	$("#tabs").tabs();
 	$("#downStatus").dialog({
 		dialogClass: "no-close",

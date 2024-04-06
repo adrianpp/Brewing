@@ -99,7 +99,6 @@ std::string generateLayout(Brewery& ct)
 
 //instead of including the entire wiringpi header
 extern "C" int wiringPiSetup();
-extern "C" int ds18b20Setup (const int pinBase, const char *deviceId);
 
 int main(int argc, char* argv[])
 {
@@ -138,12 +137,12 @@ int main(int argc, char* argv[])
     });
 	app.route_dynamic("/reboot",
 	[&]{
-		system("shutdown -r now");
+		system("sudo shutdown -r now");
 		return "rebooting system.";
 	});
 	app.route_dynamic("/shutdown",
 	[&]{
-		system("shutdown -P now");
+		system("sudo shutdown -P now");
 		return "shutting down system.";
 	});
 	app.route_dynamic("/quit",
@@ -174,13 +173,21 @@ int main(int argc, char* argv[])
 		ret += "]";
 		return ret;
 	});
-	app.route_dynamic("/i2c/set_hlt_temp_id/<string>",
+	app.route_dynamic("/i2c/hlt_temp_id/set/<string>",
 	[&](std::string deviceId) -> std::string {
-		return ds18b20Setup(HLT_TEMP_PIN, deviceId.c_str()) ? "true" : "false";
+		return setI2CDeviceForPin(HLT_TEMP_PIN, deviceId) ? "{\"value\":\"true\"}" : "{\"value\":\"false\"}";
 	});
-	app.route_dynamic("/i2c/set_pump_temp_id/<string>",
+	app.route_dynamic("/i2c/hlt_temp_id/get",
+	[&]() -> std::string {
+		return "{\"value\": \"" + getI2CDeviceForPin(HLT_TEMP_PIN) + "\"}";
+	});
+	app.route_dynamic("/i2c/pump_temp_id/set/<string>",
 	[&](std::string deviceId) -> std::string {
-		return ds18b20Setup(PUMP_ASSEMBLY_TEMP_PIN, deviceId.c_str()) ? "true" : "false";
+		return setI2CDeviceForPin(PUMP_ASSEMBLY_TEMP_PIN, deviceId) ? "{\"value\":\"true\"}" : "{\"value\":\"false\"}";
+	});
+	app.route_dynamic("/i2c/pump_temp_id/get",
+	[&]() -> std::string {
+		return "{\"value\": \"" + getI2CDeviceForPin(PUMP_ASSEMBLY_TEMP_PIN) + "\"}";
 	});
 
 	registerEndpoints(brewery, app,"");

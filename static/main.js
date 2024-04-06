@@ -104,19 +104,24 @@ function registerGraph(endpoint, selectorText, selectorGraph) {
 		});
 	setInterval(function(){ updateGraph(chart, endpoint, selectorText, selectorGraph); }, 2000);
 }
-function registerSelect(endpoint, selectorText, onSelectEndpoint) {
+function registerSelect(listEndpoint, selectorText, deviceEndpoint) {
 	var updateFunc = function(){
-		countedJSON(endpoint, function(data) {
+		countedJSON(listEndpoint, function(data) {
 			var options = [];
 			for( e in data)
 			{
-				console.log(e);
 				options.push("<option value='" + data[e].value + "'>" + data[e].value + "</option>");
 			}
 			$(selectorText+" option").each(function(index,option) {$(option).remove();});
 			$(selectorText).append(options.join("")).selectmenu();
-			$(selectorText).on("selectmenuselect", function(event,ui){
-				countedJSON(onSelectEndpoint+$(selectorText).val(), function(_ignore){});
+			// set the currently active device as selected
+			countedJSON(deviceEndpoint+"/get", function(curdevice){
+				$(selectorText).val(curdevice.value);
+				$(selectorText).selectmenu("refresh");
+			});
+			// when a new device is selected, send an update message to the server
+			$(selectorText).on("selectmenuchange", function(event,ui){
+				countedJSON(deviceEndpoint+"/set/"+$(selectorText).val(), function(_ignore){});
 			});
 		});
 	};

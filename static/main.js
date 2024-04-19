@@ -34,7 +34,7 @@ function updateTargetValue(endpoint, selector) {
 		$(selector).prop("value", data);
 		const path = endpoint.split("/");
 		$(selector+"_label").html(path[path.length-1] + "_target : " + data);
-		$(selector+"_label").css('color','black');
+		$(selector+"_label").css('color','');
 	});
 }
 function updateGraph(chart, endpoint, selectorText, selectorGraph) {

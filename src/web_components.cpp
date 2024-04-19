@@ -25,8 +25,14 @@ std::string generateLayout(TempSensor& t)
 }
 void registerEndpoints(TempSensor& t, SimpleApp& app, std::string endpointPrefix)
 {
+	app.route_dynamic(endpointPrefix+"/"+t.getName()+"/status/latest",
+		[&](){
+			JSONWrapper ret;
+			ret.set("value", std::to_string(t.getTempF()));
+			return ret.dump();
+		});
 	app.route_dynamic(endpointPrefix+"/"+t.getName()+"/status/<int>",
-			[&](std::size_t last){
+		[&](std::size_t last){
 			JSONWrapper ret;
 			auto hist = t.getHistory();
 			// dont send too many elements at the same time

@@ -38,6 +38,10 @@ function updateTargetValue(endpoint, selector) {
 	});
 }
 function updateGraph(chart, endpoint, selectorText, selectorGraph) {
+	countedJSON(endpoint+"/status/latest", function(data) {
+		const path = endpoint.split("/");
+		$(selectorText).html(path[path.length-1] + " : " + data.value);
+	});
 	countedJSON(endpoint+"/status/"+(chart.data.labels.length-1), function(data) {
 		for (e in data)
 		{
@@ -55,8 +59,6 @@ function updateGraph(chart, endpoint, selectorText, selectorGraph) {
 			chart.data.labels.push(hours+":"+minutes+":"+seconds);
 			chart.data.datasets[0].data.push(data[e].y);
 			chart.update();
-			const path = endpoint.split("/");
-			$(selectorText).html(path[path.length-1] + " : " + data[e].y);
 		}
 	});
 }
@@ -87,6 +89,7 @@ function registerGraph(endpoint, selectorText, selectorGraph) {
 			data: {
 				labels: [0],
 				datasets: [{
+					borderColor: "blue",
 					label: selectorText,
 					data: []
 				}]

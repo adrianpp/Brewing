@@ -3,7 +3,13 @@
 <script src="static/jquery/external/jquery/jquery.js"></script>
 <script src="static/jquery/jquery-ui.js"></script>
 <link rel="stylesheet" href="static/jquery/jquery-ui.css">
+
 <script src="static/Chart.js"></script>
+
+<link rel="stylesheet" type="text/css" href="static/jquery.countdown.package-2.1.0/css/jquery.countdown.css">
+<script type="text/javascript" src="static/jquery.countdown.package-2.1.0/js/jquery.plugin.js"></script>
+<script type="text/javascript" src="static/jquery.countdown.package-2.1.0/js/jquery.countdown.js"></script>
+
 <link rel="stylesheet" href="static/main.css">
 <title>{{title}}</title>
 </head>
@@ -18,6 +24,14 @@
 {{{brewery_layout}}}
 	</div>
 	<div id="RecipeConfig">
+		<fieldset>
+			<label for="Timer">Timer:</label>
+			<div id="Timer"></div>
+		</fieldset>
+		<fieldset>
+			<label for="MashSchedule">Mash Schedule</label>
+			<div id="MashSchedule"></div>
+		</fieldset>
 	</div>
 	<div id="BreweryConfig">
 	<div id="i2c_status"></div>
@@ -51,6 +65,7 @@ $(document).ready(function(){
 		width: ($(window).width()*0.75),
 		position: { my: "center top", at: "center top", of: window }
 		});
+	$("#RecipeConfig > fieldset > #Timer").countdown({until:+300});
 }); // close document.ready()
 </script>
 </body>

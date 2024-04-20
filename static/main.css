@@ -49,17 +49,14 @@ input[type='range']:active::-webkit-slider-thumb {
 	font-size:6vw;
 }
 
-#tabs {
-	width: 105%;
-}
 #tabs #header {
 	display: table;
 	table-layout: fixed;
-	width: 100%;
+	width: 98%;
 }
 #tabs #header li {
 	display: table-cell;
-	font-size:3.5vw;
+	font-size:3.2vw;
 }
 
 #RecipeConfig .is-countdown {
@@ -68,7 +65,7 @@ input[type='range']:active::-webkit-slider-thumb {
 }
 
 #RecipeConfig button {
-	font-size:4vw;
+	font-size:3.4vw;
 }
 
 #MashSchedule {
@@ -79,8 +76,22 @@ input[type='range']:active::-webkit-slider-thumb {
 }
 #MashSchedule li {
 	margin: 0 3px 3px 3px;
-	padding: 0.4em;
+	padding: 0.1em;
 	padding-left: 1.5em;
+	margin: 0.5em;
 	font-size: 0.5em;
 }
 
+#MashSchedule .ui-spinner {
+	width: 20%;
+}
+
+#MashSchedule .active-step {
+	background-color: green;
+}
+#MashSchedule .inactive-step {
+	background-color: grey;
+}
+#MashSchedule .ramping-step {
+	background-color: yellow;
+}

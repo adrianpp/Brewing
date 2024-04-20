@@ -73,14 +73,22 @@ function registerButton(endpoint, selector) {
 function registerTargetValue(endpoint, selector, MinValue, MaxValue) {
 	$(selector).prop('min', MinValue);
 	$(selector).prop('max', MaxValue);
-	var updateFunc = function(){updateTargetValue(endpoint,selector);};
-	var setFunc = function(){$.get(endpoint+"/set_target?value="+$(selector).prop('value')); setTimeout(updateFunc,100);};
-	$(selector).change(setFunc);
 	$(selector).css('width', '100%');
-	const path = endpoint.split("/");
-	var changedFunc = function(){$(selector+"_label").css('color','red').html(path[path.length-1]+"_target : " + $(selector).prop('value'));};
-	$(selector).on('input',changedFunc);
+	var updateFunc = function(){updateTargetValue(endpoint,selector);};
 	setInterval(updateFunc, 1000);
+	const path = endpoint.split("/");
+	// input is when we are moving the slider around but havent actually finalized anything
+	var inputFunc = function(){
+		$(selector+"_label").css('color','red').html(path[path.length-1]+"_target : " + $(selector).prop('value'));
+	};
+	$(selector).on('input',inputFunc);
+	// change is when something is finalized
+	var setFunc = function(){
+		$.get(endpoint+"/set_target?value="+$(selector).prop('value'));
+		inputFunc();
+		setTimeout(updateFunc,100);
+	};
+	$(selector).change(setFunc);
 }
 function registerGraph(endpoint, selectorText, selectorGraph) {
 	var chart = new Chart(document.querySelector(selectorGraph),

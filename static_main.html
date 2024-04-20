@@ -36,7 +36,10 @@
 			<ul id="MashSchedule">
 			</ul>
 			<div id="MashStepTemplate">
-				new step
+				<label for="temp-spinner">Target Temp:</label>
+				<input id="temp-spinner" name="value">
+				<label for="time-spinner">Time:</label>
+				<input id="time-spinner" name="value">
 			</div>
 		</fieldset>
 	</div>
@@ -79,16 +82,73 @@ $(document).ready(function(){
 		revert: true
 	}).disableSelection();
 	$("#RecipeConfig > fieldset > #MashStepTemplate").hide();
+	$("#RecipeConfig > fieldset > #MashStepTemplate > #temp-spinner").spinner();
+	$("#RecipeConfig > fieldset > #MashStepTemplate > #time-spinner").spinner();
 	$("#RecipeConfig > fieldset > #add-new-step").button().on("click", function(event){
-		var li = $("<li/>");
+		var li = $("<li class='inactive-step'/>");
 		var c = $("#RecipeConfig > fieldset > #MashStepTemplate").clone();
 		li.append(c);
 		c.show();
 		$("#RecipeConfig > fieldset > #MashSchedule").append(li).sortable('refresh');
 	});
+	var mash_step_index = 0;
+	var setTime = function(seconds) {
+		$("#RecipeConfig > fieldset > #Timer").countdown('option', {onExpiry:startNextStep, until:+seconds});
+	};
+	var setMashTemp = function(temp) {
+		var heater = $("#Brewery > #hlt > #heater");
+		heater.prop("value", temp);
+		heater.change();
+	};
+	var startNextStep = function() {
+		var rampToTemp = function(jobj) {
+			jobj.switchClass("inactive-step", "ramping-step");
+			$("#RecipeConfig > fieldset > #pause-schedule").click(); // pause
+			var checker = function() {
+				var actual_temp = $("#Brewery > #hlt > #reflow_temp").html().split(':')[1];
+				var target_temp = $("#Brewery > #hlt > #heater").prop("value");
+				if( Math.abs(actual_temp-target_temp) <= 1 )
+				{
+					jobj.switchClass("ramping-step", "active-step");
+					$("#RecipeConfig > fieldset > #pause-schedule").click(); // unpause
+				}
+				else
+					setTimeout(checker, 1000);
+			};
+			checker();
+		};
+		$("#RecipeConfig > fieldset > #MashSchedule > li").each(
+			function(index) {
+				if( index == mash_step_index )
+				{
+					rampToTemp($(this));
+				}
+				else
+				{
+					$(this).switchClass("active-step", "inactive-step");
+					$(this).switchClass("ramping-step", "inactive-step");
+				}
+			});
+		$("#RecipeConfig > fieldset > #MashSchedule > li > div > span > #time-spinner").each(
+			function(index) {
+				if( index == mash_step_index )
+				{
+					setTime(this.value * 60);
+				}
+			});
+		$("#RecipeConfig > fieldset > #MashSchedule > li > div > span > #temp-spinner").each(
+			function(index) {
+				if( index == mash_step_index )
+				{
+					setMashTemp(this.value);
+				}
+			});
+		mash_step_index++;
+	}
 	$("#RecipeConfig > fieldset > #start-schedule").button().on("click", function(event){
-		$("#RecipeConfig > fieldset > #Timer").countdown('option', {until:+300});
-	});
+		mash_step_index = 0;
+		startNextStep();
+		});
 	$("#RecipeConfig > fieldset > #pause-schedule").button().on("click", function(event){
 		var pause = $(this).text() === 'Pause';
 		$(this).text(pause ? 'Resume' : 'Pause');

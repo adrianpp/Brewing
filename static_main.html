@@ -15,7 +15,7 @@
 </head>
 <body>
 <div id="tabs">
-	<ul>
+	<ul id="header">
 		<li><a href="#Brewery">Brewery Control</a></li>
 		<li><a href="#RecipeConfig">Recipe Config</a></li>
 		<li><a href="#BreweryConfig">Brewery Config</a></li>
@@ -25,26 +25,33 @@
 	</div>
 	<div id="RecipeConfig">
 		<fieldset>
-			<label for="Timer">Timer:</label>
+			<legend>Timer</legend>
 			<div id="Timer"></div>
 		</fieldset>
 		<fieldset>
-			<label for="MashSchedule">Mash Schedule</label>
-			<div id="MashSchedule"></div>
+			<legend>Mash Schedule</legend>
+			<button id="add-new-step">New Step</button>
+			<button id="start-schedule">Run Steps</button>
+			<button id="pause-schedule">Pause</button>
+			<ul id="MashSchedule">
+			</ul>
+			<div id="MashStepTemplate">
+				new step
+			</div>
 		</fieldset>
 	</div>
 	<div id="BreweryConfig">
-	<div id="i2c_status"></div>
-	<fieldset>
-		<label for="i2c_temp1">HLT Temp I2C device: </label>
-		<select name="i2c_temp1" id="i2c_temp1"></select>
-	</fieldset>
-	<div id="i2c_temp1"></div>
-	<fieldset>
-		<label for="i2c_temp2">Pump Temp I2C device: </label>
-		<select name="i2c_temp2" id="i2c_temp2"></select>
-	</fieldset>
-	<div id="i2c_temp2"></div>
+		<div id="i2c_status"></div>
+		<fieldset>
+			<label for="i2c_temp1">HLT Temp I2C device: </label>
+			<select name="i2c_temp1" id="i2c_temp1"></select>
+		</fieldset>
+		<div id="i2c_temp1"></div>
+		<fieldset>
+			<label for="i2c_temp2">Pump Temp I2C device: </label>
+			<select name="i2c_temp2" id="i2c_temp2"></select>
+		</fieldset>
+		<div id="i2c_temp2"></div>
 	</div>
 </div>
 <div id="downStatus" title="Error" style="red">
@@ -65,7 +72,28 @@ $(document).ready(function(){
 		width: ($(window).width()*0.75),
 		position: { my: "center top", at: "center top", of: window }
 		});
-	$("#RecipeConfig > fieldset > #Timer").countdown({until:+300});
+	$("#RecipeConfig > fieldset > #Timer").countdown({until:+0});
+	$("#RecipeConfig > fieldset > #MashSchedule").sortable({
+		axis: 'y',
+		containment: "parent",
+		revert: true
+	}).disableSelection();
+	$("#RecipeConfig > fieldset > #MashStepTemplate").hide();
+	$("#RecipeConfig > fieldset > #add-new-step").button().on("click", function(event){
+		var li = $("<li/>");
+		var c = $("#RecipeConfig > fieldset > #MashStepTemplate").clone();
+		li.append(c);
+		c.show();
+		$("#RecipeConfig > fieldset > #MashSchedule").append(li).sortable('refresh');
+	});
+	$("#RecipeConfig > fieldset > #start-schedule").button().on("click", function(event){
+		$("#RecipeConfig > fieldset > #Timer").countdown('option', {until:+300});
+	});
+	$("#RecipeConfig > fieldset > #pause-schedule").button().on("click", function(event){
+		var pause = $(this).text() === 'Pause';
+		$(this).text(pause ? 'Resume' : 'Pause');
+		$("#RecipeConfig > fieldset > #Timer").countdown(pause ? 'pause' : 'resume');
+	});
 }); // close document.ready()
 </script>
 </body>

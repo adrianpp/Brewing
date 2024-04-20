@@ -50,15 +50,37 @@ input[type='range']:active::-webkit-slider-thumb {
 }
 
 #tabs {
-	width: 100%;
+	width: 105%;
 }
-ul {
+#tabs #header {
 	display: table;
 	table-layout: fixed;
 	width: 100%;
 }
-
-li {
+#tabs #header li {
 	display: table-cell;
 	font-size:3.5vw;
 }
+
+#RecipeConfig .is-countdown {
+	border: 0;
+	background-color: transparent;
+}
+
+#RecipeConfig button {
+	font-size:4vw;
+}
+
+#MashSchedule {
+	list-style-type: none;
+	margin: 0;
+	padding: 0;
+	width: 100%;
+}
+#MashSchedule li {
+	margin: 0 3px 3px 3px;
+	padding: 0.4em;
+	padding-left: 1.5em;
+	font-size: 0.5em;
+}
+

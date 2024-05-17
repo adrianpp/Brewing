@@ -117,18 +117,6 @@ $(document).ready(function(){
 			};
 			checker();
 		};
-		$("#RecipeConfig > fieldset > #MashSchedule > li").each(
-			function(index) {
-				if( index == mash_step_index )
-				{
-					rampToTemp($(this));
-				}
-				else
-				{
-					$(this).switchClass("active-step", "inactive-step");
-					$(this).switchClass("ramping-step", "inactive-step");
-				}
-			});
 		$("#RecipeConfig > fieldset > #MashSchedule > li > div > span > #time-spinner").each(
 			function(index) {
 				if( index == mash_step_index )
@@ -141,6 +129,18 @@ $(document).ready(function(){
 				if( index == mash_step_index )
 				{
 					setMashTemp(this.value);
+				}
+			});
+		$("#RecipeConfig > fieldset > #MashSchedule > li").each(
+			function(index) {
+				if( index == mash_step_index )
+				{
+					rampToTemp($(this));
+				}
+				else
+				{
+					$(this).switchClass("active-step", "inactive-step");
+					$(this).switchClass("ramping-step", "inactive-step");
 				}
 			});
 		mash_step_index++;

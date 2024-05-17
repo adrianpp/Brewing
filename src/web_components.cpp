@@ -43,7 +43,7 @@ void registerEndpoints(TempSensor& t, SimpleApp& app, std::string endpointPrefix
 				JSONWrapper v;
 				v.set("x", std::to_string(hist[i].first));
 				v.set("y", std::to_string(hist[i].second));
-				ret.set(i, v);
+				ret.set(i-last, v);
 			}
 			return ret.dump();
 		});
